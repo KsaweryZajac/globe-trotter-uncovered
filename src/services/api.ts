@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Define types for our API responses
@@ -146,25 +145,27 @@ const api = {
   },
 
   /**
-   * Translate text using LibreTranslate API (free translation API)
+   * Translate text using MyMemory Translation API (free and no registration required)
    * @param text Text to translate
    * @param targetLang Target language code (e.g., 'es', 'fr')
    */
   async translateText(text: string, targetLang: string): Promise<string> {
     try {
-      // The correct endpoint for the public instance of LibreTranslate
-      const response = await axios.post('https://libretranslate.com/translate', {
-        q: text,
-        source: 'auto',
-        target: targetLang,
-        format: 'text'
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
+      // MyMemory Translation API (free, no registration required)
+      const response = await axios.get(
+        `https://api.mymemory.translated.net/get`, {
+          params: {
+            q: text,
+            langpair: `en|${targetLang}`,
+          }
         }
-      });
+      );
       
-      return response.data.translatedText;
+      if (response.data.responseStatus === 200) {
+        return response.data.responseData.translatedText;
+      } else {
+        throw new Error('Translation failed: ' + response.data.responseDetails);
+      }
     } catch (error) {
       console.error('Error translating text:', error);
       throw new Error('Translation failed. The service might be temporarily unavailable.');
