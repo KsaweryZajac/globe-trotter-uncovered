@@ -152,12 +152,16 @@ const api = {
    */
   async translateText(text: string, targetLang: string): Promise<string> {
     try {
-      // LibreTranslate is a free and open source translation API
-      const response = await axios.post('https://libretranslate.de/translate', {
+      // The correct endpoint for the public instance of LibreTranslate
+      const response = await axios.post('https://libretranslate.com/translate', {
         q: text,
         source: 'auto',
         target: targetLang,
         format: 'text'
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
       return response.data.translatedText;
