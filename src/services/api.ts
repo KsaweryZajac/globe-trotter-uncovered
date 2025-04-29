@@ -60,6 +60,24 @@ const api = {
   },
 
   /**
+   * Fetch a random country
+   */
+  async getRandomCountry(): Promise<Country> {
+    try {
+      // Get all countries first
+      const response = await axios.get('https://restcountries.com/v3.1/all');
+      const countries = response.data;
+      
+      // Select a random country from the list
+      const randomIndex = Math.floor(Math.random() * countries.length);
+      return countries[randomIndex];
+    } catch (error) {
+      console.error('Error fetching random country:', error);
+      throw new Error('Failed to fetch a random country. Please try again.');
+    }
+  },
+
+  /**
    * Fetch news articles related to a country
    * Note: In a real project, you'd use an environment variable for the API key
    * @param country Country name to get news about
@@ -124,6 +142,28 @@ const api = {
     } catch (error) {
       console.error('Error fetching quote:', error);
       throw new Error('Failed to fetch inspirational quote. Please try again.');
+    }
+  },
+
+  /**
+   * Translate text using LibreTranslate API (free translation API)
+   * @param text Text to translate
+   * @param targetLang Target language code (e.g., 'es', 'fr')
+   */
+  async translateText(text: string, targetLang: string): Promise<string> {
+    try {
+      // LibreTranslate is a free and open source translation API
+      const response = await axios.post('https://libretranslate.de/translate', {
+        q: text,
+        source: 'auto',
+        target: targetLang,
+        format: 'text'
+      });
+      
+      return response.data.translatedText;
+    } catch (error) {
+      console.error('Error translating text:', error);
+      throw new Error('Translation failed. The service might be temporarily unavailable.');
     }
   }
 };

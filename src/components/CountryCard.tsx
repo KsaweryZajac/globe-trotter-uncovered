@@ -4,34 +4,43 @@ import { Country, NewsArticle, Quote } from "@/services/api";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HeartIcon } from "lucide-react";
+import { HeartIcon, GlobeIcon } from "lucide-react";
 import NewsSection from "./NewsSection";
 import QuoteDisplay from "./QuoteDisplay";
+import TranslationSection from "./TranslationSection";
 
 interface CountryCardProps {
   country: Country;
   news: NewsArticle[];
   quote: Quote | null;
+  translation?: string | null;
   onAddToFavorites: (country: Country) => void;
+  onTranslate?: (text: string, targetLang: string) => void;
   isFavorite: boolean;
   isLoading: boolean;
   newsLoading: boolean;
   quoteLoading: boolean;
+  translationLoading?: boolean;
   newsError: string | null;
   quoteError: string | null;
+  translationError?: string | null;
 }
 
 const CountryCard = ({
   country,
   news,
   quote,
+  translation,
   onAddToFavorites,
+  onTranslate,
   isFavorite,
   isLoading,
   newsLoading,
   quoteLoading,
+  translationLoading = false,
   newsError,
-  quoteError
+  quoteError,
+  translationError = null
 }: CountryCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -105,6 +114,18 @@ const CountryCard = ({
                 </dd>
               </dl>
             </div>
+
+            {onTranslate && (
+              <div className="mt-4">
+                <TranslationSection 
+                  countryName={country.name.common}
+                  translation={translation}
+                  onTranslate={onTranslate}
+                  isLoading={translationLoading}
+                  error={translationError}
+                />
+              </div>
+            )}
           </div>
         </div>
         
