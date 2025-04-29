@@ -1,12 +1,209 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import { useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/use-toast';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
+import api, { Country, NewsArticle, Quote } from '@/services/api';
+import ThemeToggle from '@/components/ThemeToggle';
+import SearchBar from '@/components/SearchBar';
+import CountryCard from '@/components/CountryCard';
+import FavoritesList from '@/components/FavoritesList';
 
 const Index = () => {
+  // State management
+  const [searchedCountry, setSearchedCountry] = useState<Country | null>(null);
+  const [favorites, setFavorites] = useLocalStorage<Country[]>('favorites', []);
+  const [news, setNews] = useState<NewsArticle[]>([]);
+  const [quote, setQuote] = useState<Quote | null>(null);
+  
+  // Loading states
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [newsLoading, setNewsLoading] = useState<boolean>(false);
+  const [quoteLoading, setQuoteLoading] = useState<boolean>(false);
+  
+  // Error states
+  const [countryError, setCountryError] = useState<string | null>(null);
+  const [newsError, setNewsError] = useState<string | null>(null);
+  const [quoteError, setQuoteError] = useState<string | null>(null);
+
+  const { toast } = useToast();
+
+  // Check if a country is in favorites
+  const isCountryInFavorites = (country: Country | null) => {
+    if (!country) return false;
+    return favorites.some(fav => fav.cca3 === country.cca3);
+  };
+
+  // Handle search functionality
+  const handleSearch = async (query: string) => {
+    setIsLoading(true);
+    setCountryError(null);
+    setSearchedCountry(null);
+
+    try {
+      const countries = await api.getCountryByName(query);
+      if (countries && countries.length > 0) {
+        setSearchedCountry(countries[0]);
+        
+        // Fetch related data
+        fetchNews(countries[0].name.common);
+        fetchQuote();
+      } else {
+        setCountryError('No country found with that name.');
+        toast({
+          title: 'Country not found',
+          description: 'Please check the spelling and try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      setCountryError(error instanceof Error ? error.message : 'An error occurred.');
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An error occurred.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Fetch news for a country
+  const fetchNews = async (countryName: string) => {
+    setNewsLoading(true);
+    setNewsError(null);
+
+    try {
+      const articles = await api.getNewsByCountry(countryName);
+      setNews(articles);
+    } catch (error) {
+      setNewsError(error instanceof Error ? error.message : 'Failed to load news.');
+    } finally {
+      setNewsLoading(false);
+    }
+  };
+
+  // Fetch a random quote
+  const fetchQuote = async () => {
+    setQuoteLoading(true);
+    setQuoteError(null);
+
+    try {
+      const randomQuote = await api.getRandomQuote();
+      setQuote(randomQuote);
+    } catch (error) {
+      setQuoteError(error instanceof Error ? error.message : 'Failed to load quote.');
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
+  // Toggle favorite status
+  const toggleFavorite = (country: Country) => {
+    if (isCountryInFavorites(country)) {
+      setFavorites(favorites.filter(fav => fav.cca3 !== country.cca3));
+      toast({
+        title: 'Removed from favorites',
+        description: `${country.name.common} has been removed from your favorites.`,
+      });
+    } else {
+      setFavorites([...favorites, country]);
+      toast({
+        title: 'Added to favorites',
+        description: `${country.name.common} has been added to your favorites.`,
+      });
+    }
+  };
+
+  // Remove a country from favorites
+  const removeFavorite = (countryCode: string) => {
+    setFavorites(favorites.filter(fav => fav.cca3 !== countryCode));
+  };
+
+  // Load a favorite country
+  const loadFavorite = (country: Country) => {
+    setSearchedCountry(country);
+    fetchNews(country.name.common);
+    fetchQuote();
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen pb-8">
+      {/* Header */}
+      <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/90 border-b border-border">
+        <div className="container py-4 flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <span className="animate-float">🌍</span>
+            <h1 className="text-2xl font-bold">Culture Explorer</h1>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mt-8">
+        {/* Search Section */}
+        <section className="mb-8">
+          <div className="flex flex-col items-center text-center mb-6">
+            <h2 className="text-3xl font-bold mb-2">Explore the World's Cultures</h2>
+            <p className="text-muted-foreground max-w-2xl">
+              Search for a country to discover its details, latest news, and get inspired with a random quote.
+            </p>
+          </div>
+          
+          <div className="flex justify-center mb-4">
+            <SearchBar onSearch={handleSearch} isLoading={isLoading} />
+          </div>
+          
+          {countryError && (
+            <div className="text-center text-destructive">
+              {countryError}
+            </div>
+          )}
+        </section>
+
+        {/* Main Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Favorites Section (Sidebar) */}
+          <aside className="md:col-span-1">
+            <FavoritesList 
+              favorites={favorites} 
+              onRemoveFavorite={removeFavorite}
+              onSelectFavorite={loadFavorite}
+            />
+          </aside>
+
+          {/* Country Results Section */}
+          <section className="md:col-span-2">
+            {searchedCountry ? (
+              <CountryCard 
+                country={searchedCountry}
+                news={news}
+                quote={quote}
+                onAddToFavorites={toggleFavorite}
+                isFavorite={isCountryInFavorites(searchedCountry)}
+                isLoading={isLoading}
+                newsLoading={newsLoading}
+                quoteLoading={quoteLoading}
+                newsError={newsError}
+                quoteError={quoteError}
+              />
+            ) : !isLoading && !countryError ? (
+              <div className="bg-card text-center p-10 rounded-lg border border-border shadow-sm">
+                <h3 className="text-xl font-semibold mb-4">Welcome to Culture Explorer!</h3>
+                <p className="text-muted-foreground mb-6">
+                  Search for a country above to start exploring or select one of your favorites.
+                </p>
+                <div className="text-5xl animate-float">🗺️</div>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="container mt-12 text-center text-sm text-muted-foreground">
+        <p>&copy; {new Date().getFullYear()} Culture Explorer - A school project</p>
+      </footer>
     </div>
   );
 };
