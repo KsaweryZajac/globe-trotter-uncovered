@@ -20,6 +20,9 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
     }));
   };
 
+  // Unsplash API access key
+  const accessKey = 'Zb33e1ECktbJxJDGrqGoYivM-VNWgB4XAH_LpWlpzp8';
+
   return (
     <div className="my-4">
       <h3 className="font-semibold text-lg mb-2">Gallery of {country}</h3>
@@ -30,7 +33,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
               <Skeleton className="absolute inset-0 w-full h-full" />
             )}
             <img
-              src={`https://source.unsplash.com/featured/400x300?${encodeURIComponent(country)}&sig=${index}`}
+              src={`https://api.unsplash.com/photos/random?query=${encodeURIComponent(country)}&client_id=${accessKey}&orientation=landscape&count=1&sig=${index}`}
               alt={`Image ${index + 1} of ${country}`}
               className={`w-full h-full object-cover transition-opacity duration-300 ${loadedImages[index] ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => handleImageLoaded(index)}

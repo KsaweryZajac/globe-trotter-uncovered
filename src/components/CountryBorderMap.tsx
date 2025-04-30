@@ -14,9 +14,6 @@ const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryCode, countr
   // Using open-source OpenStreetMap for map display
   const mapUrl = `https://nominatim.openstreetmap.org/ui/search.html?country=${encodeURIComponent(countryCode)}`;
   
-  // Using free StaticMap API
-  const borderMapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&size=600,400&l=map&bbox=-180,-85,180,85&pl=c:3F75FFB2,w:2,${countryCode.toLowerCase()}`;
-
   return (
     <Card className="p-4 mt-4">
       <h3 className="font-semibold text-lg mb-2">Country Borders</h3>
@@ -25,7 +22,7 @@ const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryCode, countr
           <Skeleton className="absolute inset-0 w-full h-full" />
         )}
         <img 
-          src={`https://staticmap.openstreetmap.de/staticmap.php?center=${encodeURIComponent(countryName)}&zoom=4&size=600x400&maptype=mapnik&markers=${encodeURIComponent(countryName)},lightblue`}
+          src={`https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=600&height=400&center=lonlat:0,0;auto&zoom=auto&marker=lonlat:0,0;type:awesome;color:%23ff0000;icontype:awesome&apiKey=15c128aec18940f195c1df47d62d7548&area=${countryCode.toLowerCase()}`}
           alt={`Map of ${countryName}`}
           className={`w-full h-full object-cover border rounded-md transition-opacity duration-300 ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setMapLoaded(true)}

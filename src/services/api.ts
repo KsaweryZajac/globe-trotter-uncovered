@@ -43,7 +43,7 @@ export interface Weather {
     areaName: { value: string }[];
     country: { value: string }[];
   }[];
-  weather?: {
+  weather: {
     date: string;
     avgtempC: string;
     hourly: {
