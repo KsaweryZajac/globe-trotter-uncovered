@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
-import api, { Country, NewsArticle, Quote } from '@/services/api';
+import api, { Country, NewsArticle, Weather } from '@/services/api';
 import ThemeToggle from '@/components/ThemeToggle';
 import SearchBar from '@/components/SearchBar';
 import CountryCard from '@/components/CountryCard';
@@ -15,19 +14,19 @@ const Search = () => {
   const [searchedCountry, setSearchedCountry] = useState<Country | null>(null);
   const [favorites, setFavorites] = useLocalStorage<Country[]>('favorites', []);
   const [news, setNews] = useState<NewsArticle[]>([]);
-  const [quote, setQuote] = useState<Quote | null>(null);
+  const [weather, setWeather] = useState<Weather | null>(null);
   const [translation, setTranslation] = useState<string | null>(null);
   
   // Loading states
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [newsLoading, setNewsLoading] = useState<boolean>(false);
-  const [quoteLoading, setQuoteLoading] = useState<boolean>(false);
+  const [weatherLoading, setWeatherLoading] = useState<boolean>(false);
   const [translationLoading, setTranslationLoading] = useState<boolean>(false);
   
   // Error states
   const [countryError, setCountryError] = useState<string | null>(null);
   const [newsError, setNewsError] = useState<string | null>(null);
-  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
   const [translationError, setTranslationError] = useState<string | null>(null);
 
   const { toast } = useToast();
@@ -51,7 +50,9 @@ const Search = () => {
         
         // Fetch related data
         fetchNews(countries[0].name.common);
-        fetchQuote();
+        if (countries[0].capital && countries[0].capital.length > 0) {
+          fetchWeather(countries[0].capital[0]);
+        }
       } else {
         setCountryError('No country found with that name.');
         toast({
@@ -85,7 +86,9 @@ const Search = () => {
         
         // Fetch related data
         fetchNews(randomCountry.name.common);
-        fetchQuote();
+        if (randomCountry.capital && randomCountry.capital.length > 0) {
+          fetchWeather(randomCountry.capital[0]);
+        }
       } else {
         setCountryError('Failed to get a random country.');
         toast({
@@ -121,18 +124,23 @@ const Search = () => {
     }
   };
 
-  // Fetch a random quote
-  const fetchQuote = async () => {
-    setQuoteLoading(true);
-    setQuoteError(null);
+  // Fetch weather for a city
+  const fetchWeather = async (city: string) => {
+    setWeatherLoading(true);
+    setWeatherError(null);
 
     try {
-      const randomQuote = await api.getRandomQuote();
-      setQuote(randomQuote);
+      const weatherData = await api.getWeatherForCity(city);
+      setWeather(weatherData);
     } catch (error) {
-      setQuoteError(error instanceof Error ? error.message : 'Failed to load quote.');
+      setWeatherError(error instanceof Error ? error.message : 'Failed to load weather.');
+      toast({
+        title: 'Weather Error',
+        description: error instanceof Error ? error.message : 'Failed to load weather data.',
+        variant: 'destructive',
+      });
     } finally {
-      setQuoteLoading(false);
+      setWeatherLoading(false);
     }
   };
 
@@ -206,7 +214,7 @@ const Search = () => {
           <div className="flex flex-col items-center text-center mb-6">
             <h2 className="text-3xl font-bold mb-2">Search Countries</h2>
             <p className="text-muted-foreground max-w-2xl">
-              Search for a country to discover its details, latest news, and get inspired with a random quote.
+              Search for a country to discover its details, latest news, and weather information.
             </p>
           </div>
           
@@ -237,17 +245,17 @@ const Search = () => {
               <CountryCard 
                 country={searchedCountry}
                 news={news}
-                quote={quote}
+                weather={weather}
                 translation={translation}
                 onAddToFavorites={toggleFavorite}
                 onTranslate={translateText}
                 isFavorite={isCountryInFavorites(searchedCountry)}
                 isLoading={isLoading}
                 newsLoading={newsLoading}
-                quoteLoading={quoteLoading}
+                weatherLoading={weatherLoading}
                 translationLoading={translationLoading}
                 newsError={newsError}
-                quoteError={quoteError}
+                weatherError={weatherError}
                 translationError={translationError}
               />
             </div>

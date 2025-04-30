@@ -31,15 +31,19 @@ export interface NewsArticle {
   content: string;
 }
 
-export interface Quote {
-  _id: string;
-  content: string;
-  author: string;
-  tags: string[];
-  authorSlug: string;
-  length: number;
-  dateAdded: string;
-  dateModified: string;
+// Replace Quote interface with Weather interface
+export interface Weather {
+  current_condition: {
+    temp_C: string;
+    weatherDesc: { value: string }[];
+    humidity: string;
+    weatherIconUrl: { value: string }[];
+    observation_time: string;
+  }[];
+  nearest_area: {
+    areaName: { value: string }[];
+    country: { value: string }[];
+  }[];
 }
 
 // Create API service with error handling
@@ -132,15 +136,17 @@ const api = {
   },
 
   /**
-   * Fetch a random inspirational quote
+   * Fetch weather information for a capital city
+   * @param city The city to get weather for
    */
-  async getRandomQuote(): Promise<Quote> {
+  async getWeatherForCity(city: string): Promise<Weather> {
     try {
-      const response = await axios.get('https://api.quotable.io/random');
+      // Use wttr.in API which requires no registration or API key
+      const response = await axios.get(`https://wttr.in/${encodeURIComponent(city)}?format=j1`);
       return response.data;
     } catch (error) {
-      console.error('Error fetching quote:', error);
-      throw new Error('Failed to fetch inspirational quote. Please try again.');
+      console.error('Error fetching weather:', error);
+      throw new Error('Failed to fetch weather information. Please try again.');
     }
   },
 

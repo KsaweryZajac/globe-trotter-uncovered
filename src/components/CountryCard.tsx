@@ -1,45 +1,46 @@
 
 import { useState, useEffect } from "react";
-import { Country, NewsArticle, Quote } from "@/services/api";
+import { Country, NewsArticle, Weather } from "@/services/api";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HeartIcon, GlobeIcon } from "lucide-react";
+import { HeartIcon } from "lucide-react";
 import NewsSection from "./NewsSection";
-import QuoteDisplay from "./QuoteDisplay";
+import WeatherDisplay from "./WeatherDisplay";
 import TranslationSection from "./TranslationSection";
+import ImageGallery from "./ImageGallery";
 
 interface CountryCardProps {
   country: Country;
   news: NewsArticle[];
-  quote: Quote | null;
+  weather: Weather | null;
   translation?: string | null;
   onAddToFavorites: (country: Country) => void;
   onTranslate?: (text: string, targetLang: string) => void;
   isFavorite: boolean;
   isLoading: boolean;
   newsLoading: boolean;
-  quoteLoading: boolean;
+  weatherLoading: boolean;
   translationLoading?: boolean;
   newsError: string | null;
-  quoteError: string | null;
+  weatherError: string | null;
   translationError?: string | null;
 }
 
 const CountryCard = ({
   country,
   news,
-  quote,
+  weather,
   translation,
   onAddToFavorites,
   onTranslate,
   isFavorite,
   isLoading,
   newsLoading,
-  quoteLoading,
+  weatherLoading,
   translationLoading = false,
   newsError,
-  quoteError,
+  weatherError,
   translationError = null
 }: CountryCardProps) => {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -129,6 +130,9 @@ const CountryCard = ({
           </div>
         </div>
         
+        {/* Image Gallery for Country */}
+        <ImageGallery country={country.name.common} />
+        
         <NewsSection 
           news={news} 
           isLoading={newsLoading} 
@@ -136,10 +140,12 @@ const CountryCard = ({
           countryName={country.name.common}
         />
         
-        <QuoteDisplay 
-          quote={quote} 
-          isLoading={quoteLoading} 
-          error={quoteError} 
+        {/* Weather Display for the Capital */}
+        <WeatherDisplay 
+          weather={weather} 
+          city={country.capital?.[0] || null}
+          isLoading={weatherLoading} 
+          error={weatherError} 
         />
       </CardContent>
     </Card>

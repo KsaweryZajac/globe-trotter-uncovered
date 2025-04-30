@@ -1,7 +1,7 @@
 
 import { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Country, NewsArticle, Quote } from '@/services/api';
+import { Country, NewsArticle, Weather } from '@/services/api';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -15,15 +15,15 @@ const Favorites = () => {
   const [favorites, setFavorites] = useLocalStorage<Country[]>('favorites', []);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [news, setNews] = useState<NewsArticle[]>([]);
-  const [quote, setQuote] = useState<Quote | null>(null);
+  const [weather, setWeather] = useState<Weather | null>(null);
   
   // Loading states
   const [newsLoading, setNewsLoading] = useState<boolean>(false);
-  const [quoteLoading, setQuoteLoading] = useState<boolean>(false);
+  const [weatherLoading, setWeatherLoading] = useState<boolean>(false);
   
   // Error states
   const [newsError, setNewsError] = useState<string | null>(null);
-  const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [weatherError, setWeatherError] = useState<string | null>(null);
 
   // Remove a country from favorites
   const removeFavorite = (countryCode: string) => {
@@ -39,7 +39,7 @@ const Favorites = () => {
     
     // Fetch related data
     setNewsLoading(true);
-    setQuoteLoading(true);
+    setWeatherLoading(true);
     
     try {
       const articles = await api.getNewsByCountry(country.name.common);
@@ -51,12 +51,14 @@ const Favorites = () => {
     }
     
     try {
-      const randomQuote = await api.getRandomQuote();
-      setQuote(randomQuote);
+      if (country.capital && country.capital.length > 0) {
+        const weatherData = await api.getWeatherForCity(country.capital[0]);
+        setWeather(weatherData);
+      }
     } catch (error) {
-      setQuoteError(error instanceof Error ? error.message : 'Failed to load quote.');
+      setWeatherError(error instanceof Error ? error.message : 'Failed to load weather.');
     } finally {
-      setQuoteLoading(false);
+      setWeatherLoading(false);
     }
   };
 
@@ -149,14 +151,14 @@ const Favorites = () => {
               <CountryCard 
                 country={selectedCountry}
                 news={news}
-                quote={quote}
+                weather={weather}
                 onAddToFavorites={() => removeFavorite(selectedCountry.cca3)}
                 isFavorite={true}
                 isLoading={false}
                 newsLoading={newsLoading}
-                quoteLoading={quoteLoading}
+                weatherLoading={weatherLoading}
                 newsError={newsError}
-                quoteError={quoteError}
+                weatherError={weatherError}
               />
             ) : (
               <div className="bg-card text-center p-10 rounded-lg border border-border shadow-sm h-full flex flex-col justify-center items-center">
