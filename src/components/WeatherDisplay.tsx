@@ -25,10 +25,12 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({
   countryName 
 }) => {
   const [searchCity, setSearchCity] = useState('');
+  const [displayCity, setDisplayCity] = useState<string | null>(city);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchCity.trim()) {
+      setDisplayCity(searchCity.trim());
       onCitySearch(searchCity.trim());
     }
   };
@@ -71,10 +73,10 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({
         </div>
       ) : error ? (
         <p className="text-destructive">{error}</p>
-      ) : weather && city ? (
+      ) : weather && displayCity ? (
         <>
           <div className="mb-4">
-            <h4 className="text-md font-medium mb-2">Current Weather in {city}</h4>
+            <h4 className="text-md font-medium mb-2">Current Weather in {displayCity}</h4>
             <div className="flex items-center">
               {getWeatherIcon(weather.current_condition[0].weatherDesc[0].value)}
               <div>
