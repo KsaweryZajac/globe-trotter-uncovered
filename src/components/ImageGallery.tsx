@@ -30,7 +30,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
               <Skeleton className="absolute inset-0 w-full h-full" />
             )}
             <img
-              src={`https://source.unsplash.com/400x300/?${encodeURIComponent(country)}&sig=${index}`}
+              src={`https://source.unsplash.com/featured/400x300?${encodeURIComponent(country)}&sig=${index}`}
               alt={`Image ${index + 1} of ${country}`}
               className={`w-full h-full object-cover transition-opacity duration-300 ${loadedImages[index] ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => handleImageLoaded(index)}

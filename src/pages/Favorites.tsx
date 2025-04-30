@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Country, NewsArticle, Weather } from '@/services/api';
@@ -9,6 +8,7 @@ import { GlobeIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CountryCard from '@/components/CountryCard';
 import api from '@/services/api';
+import { useToast } from '@/components/ui/use-toast';
 
 const Favorites = () => {
   // State management
@@ -24,6 +24,8 @@ const Favorites = () => {
   // Error states
   const [newsError, setNewsError] = useState<string | null>(null);
   const [weatherError, setWeatherError] = useState<string | null>(null);
+  
+  const { toast } = useToast();
 
   // Remove a country from favorites
   const removeFavorite = (countryCode: string) => {
@@ -57,6 +59,31 @@ const Favorites = () => {
       }
     } catch (error) {
       setWeatherError(error instanceof Error ? error.message : 'Failed to load weather.');
+    } finally {
+      setWeatherLoading(false);
+    }
+  };
+
+  // Fetch weather for a specific city
+  const fetchWeatherForCity = async (city: string) => {
+    setWeatherLoading(true);
+    setWeatherError(null);
+
+    try {
+      const weatherData = await api.getWeatherForCity(city);
+      setWeather(weatherData);
+      
+      toast({
+        title: 'Weather Updated',
+        description: `Weather information for ${city} has been loaded.`,
+      });
+    } catch (error) {
+      setWeatherError(error instanceof Error ? error.message : 'Failed to load weather.');
+      toast({
+        title: 'Weather Error',
+        description: error instanceof Error ? error.message : 'Failed to load weather data.',
+        variant: 'destructive',
+      });
     } finally {
       setWeatherLoading(false);
     }
@@ -153,6 +180,7 @@ const Favorites = () => {
                 news={news}
                 weather={weather}
                 onAddToFavorites={() => removeFavorite(selectedCountry.cca3)}
+                onCitySearch={fetchWeatherForCity}
                 isFavorite={true}
                 isLoading={false}
                 newsLoading={newsLoading}

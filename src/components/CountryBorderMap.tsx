@@ -11,11 +11,11 @@ interface CountryBorderMapProps {
 const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryCode, countryName }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   
-  // Using the free nominatim service for maps without API key
+  // Using open-source OpenStreetMap for map display
   const mapUrl = `https://nominatim.openstreetmap.org/ui/search.html?country=${encodeURIComponent(countryCode)}`;
   
-  // Using static snapshot from mapsvg for border display (100% free to use)
-  const borderMapUrl = `https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=600&height=400&center=auto&format=png&apiKey=YOUR_API_KEY&marker=lonlat:0,0;type:material;color:%23000000;icontype:awesome&zoom=auto&area=${countryCode.toLowerCase()}`;
+  // Using free StaticMap API
+  const borderMapUrl = `https://static-maps.yandex.ru/1.x/?lang=en_US&size=600,400&l=map&bbox=-180,-85,180,85&pl=c:3F75FFB2,w:2,${countryCode.toLowerCase()}`;
 
   return (
     <Card className="p-4 mt-4">
@@ -25,10 +25,11 @@ const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryCode, countr
           <Skeleton className="absolute inset-0 w-full h-full" />
         )}
         <img 
-          src={`https://open.mapquestapi.com/staticmap/v5/map?key=YOUR_API_KEY&center=${encodeURIComponent(countryName)}&zoom=3&size=600,400&type=map`}
+          src={`https://staticmap.openstreetmap.de/staticmap.php?center=${encodeURIComponent(countryName)}&zoom=4&size=600x400&maptype=mapnik&markers=${encodeURIComponent(countryName)},lightblue`}
           alt={`Map of ${countryName}`}
           className={`w-full h-full object-cover border rounded-md transition-opacity duration-300 ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setMapLoaded(true)}
+          onError={() => setMapLoaded(true)} // Handle errors gracefully
           loading="lazy"
         />
       </div>
