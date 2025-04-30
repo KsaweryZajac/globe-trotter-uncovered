@@ -132,6 +132,14 @@ const Search = () => {
     try {
       const weatherData = await api.getWeatherForCity(city);
       setWeather(weatherData);
+      
+      // Only show toast for city searches, not initial loads
+      if (city !== searchedCountry?.capital?.[0]) {
+        toast({
+          title: 'Weather Updated',
+          description: `Weather information for ${city} has been loaded.`,
+        });
+      }
     } catch (error) {
       setWeatherError(error instanceof Error ? error.message : 'Failed to load weather.');
       toast({
@@ -249,6 +257,7 @@ const Search = () => {
                 translation={translation}
                 onAddToFavorites={toggleFavorite}
                 onTranslate={translateText}
+                onCitySearch={fetchWeather}
                 isFavorite={isCountryInFavorites(searchedCountry)}
                 isLoading={isLoading}
                 newsLoading={newsLoading}

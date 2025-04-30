@@ -31,7 +31,6 @@ export interface NewsArticle {
   content: string;
 }
 
-// Replace Quote interface with Weather interface
 export interface Weather {
   current_condition: {
     temp_C: string;
@@ -43,6 +42,14 @@ export interface Weather {
   nearest_area: {
     areaName: { value: string }[];
     country: { value: string }[];
+  }[];
+  weather?: {
+    date: string;
+    avgtempC: string;
+    hourly: {
+      weatherDesc: { value: string }[];
+      tempC: string;
+    }[];
   }[];
 }
 
@@ -136,7 +143,7 @@ const api = {
   },
 
   /**
-   * Fetch weather information for a capital city
+   * Fetch weather information for a city
    * @param city The city to get weather for
    */
   async getWeatherForCity(city: string): Promise<Weather> {
@@ -147,6 +154,21 @@ const api = {
     } catch (error) {
       console.error('Error fetching weather:', error);
       throw new Error('Failed to fetch weather information. Please try again.');
+    }
+  },
+
+  /**
+   * Fetch country border information
+   * @param countryCode ISO 3166-1 alpha-3 country code
+   */
+  async getCountryBorders(countryCode: string): Promise<any> {
+    try {
+      // Use restcountries API to get border countries
+      const response = await axios.get(`https://restcountries.com/v3.1/alpha/${countryCode}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching country borders:', error);
+      throw new Error('Failed to fetch country border information.');
     }
   },
 

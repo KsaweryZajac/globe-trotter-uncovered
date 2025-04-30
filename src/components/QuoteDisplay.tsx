@@ -1,40 +1,46 @@
 
-import { Quote } from "@/services/api";
-import { Card, CardContent } from "@/components/ui/card";
+import React from 'react';
+import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface QuoteDisplayProps {
-  quote: Quote | null;
+  quote: {
+    content: string;
+    author: string;
+  } | null;
   isLoading: boolean;
   error: string | null;
 }
 
-const QuoteDisplay = ({ quote, isLoading, error }: QuoteDisplayProps) => {
+const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ quote, isLoading, error }) => {
+  if (isLoading) {
+    return (
+      <Card className="p-4 mt-4">
+        <div className="flex flex-col space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-4 mt-4 border-destructive">
+        <p className="text-destructive">Failed to load quote: {error}</p>
+      </Card>
+    );
+  }
+
+  if (!quote) {
+    return null;
+  }
+
   return (
-    <Card className="shadow-sm mt-4">
-      <CardContent className="pt-6">
-        {isLoading ? (
-          <div className="text-center py-4">
-            <div className="text-muted-foreground">Loading quote...</div>
-          </div>
-        ) : error ? (
-          <div className="text-center py-4">
-            <div className="text-destructive">{error}</div>
-          </div>
-        ) : quote ? (
-          <figure className="flex flex-col gap-2">
-            <blockquote className="italic text-muted-foreground">
-              "{quote.content}"
-            </blockquote>
-            <figcaption className="text-right text-sm font-medium">
-              &mdash; {quote.author}
-            </figcaption>
-          </figure>
-        ) : (
-          <div className="text-center py-4">
-            <div className="text-muted-foreground">No quote found. Try searching for a country.</div>
-          </div>
-        )}
-      </CardContent>
+    <Card className="p-4 mt-4">
+      <blockquote className="italic">"{quote.content}"</blockquote>
+      <p className="text-right mt-2">— {quote.author}</p>
     </Card>
   );
 };

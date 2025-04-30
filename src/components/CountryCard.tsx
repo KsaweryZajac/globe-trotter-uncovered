@@ -9,6 +9,7 @@ import NewsSection from "./NewsSection";
 import WeatherDisplay from "./WeatherDisplay";
 import TranslationSection from "./TranslationSection";
 import ImageGallery from "./ImageGallery";
+import CountryBorderMap from "./CountryBorderMap";
 
 interface CountryCardProps {
   country: Country;
@@ -17,6 +18,7 @@ interface CountryCardProps {
   translation?: string | null;
   onAddToFavorites: (country: Country) => void;
   onTranslate?: (text: string, targetLang: string) => void;
+  onCitySearch: (city: string) => void;
   isFavorite: boolean;
   isLoading: boolean;
   newsLoading: boolean;
@@ -34,6 +36,7 @@ const CountryCard = ({
   translation,
   onAddToFavorites,
   onTranslate,
+  onCitySearch,
   isFavorite,
   isLoading,
   newsLoading,
@@ -85,6 +88,7 @@ const CountryCard = ({
         <CardDescription>{country.name.official}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Country Info Section */}
         <div className="flex flex-col md:flex-row gap-4">
           <div className="w-full md:w-1/2">
             {!imageLoaded ? (
@@ -130,6 +134,9 @@ const CountryCard = ({
           </div>
         </div>
         
+        {/* Country Borders Map */}
+        <CountryBorderMap countryCode={country.cca3} countryName={country.name.common} />
+        
         {/* Image Gallery for Country */}
         <ImageGallery country={country.name.common} />
         
@@ -140,12 +147,14 @@ const CountryCard = ({
           countryName={country.name.common}
         />
         
-        {/* Weather Display for the Capital */}
+        {/* Weather Display for the Capital with city search */}
         <WeatherDisplay 
           weather={weather} 
           city={country.capital?.[0] || null}
           isLoading={weatherLoading} 
-          error={weatherError} 
+          error={weatherError}
+          onCitySearch={onCitySearch}
+          countryName={country.name.common}
         />
       </CardContent>
     </Card>

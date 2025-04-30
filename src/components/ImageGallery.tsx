@@ -34,6 +34,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
               alt={`Image ${index + 1} of ${country}`}
               className={`w-full h-full object-cover transition-opacity duration-300 ${loadedImages[index] ? 'opacity-100' : 'opacity-0'}`}
               onLoad={() => handleImageLoaded(index)}
+              loading="lazy"
             />
           </div>
         ))}
