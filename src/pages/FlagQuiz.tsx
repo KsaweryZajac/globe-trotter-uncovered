@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -14,15 +14,6 @@ import api from '@/services/api';
 
 const STORAGE_KEY = 'flagQuizLeaderboard';
 
-const generateLobbyCode = (): string => {
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar-looking characters
-  let result = '';
-  for (let i = 0; i < 5; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-};
-
 type LeaderboardEntry = {
   name: string;
   score: number;
@@ -31,6 +22,7 @@ type LeaderboardEntry = {
 
 const FlagQuiz = () => {
   const { toast } = useToast();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(true);
   const [countries, setCountries] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('solo');
@@ -39,6 +31,18 @@ const FlagQuiz = () => {
   const [joinLobbyCode, setJoinLobbyCode] = useState('');
   const [multiplayerMode, setMultiplayerMode] = useState<'create' | 'join' | 'play'>('create');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+
+  // Check for lobby code in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const lobbyCodeParam = params.get('lobby');
+    
+    if (lobbyCodeParam) {
+      setLobbyCode(lobbyCodeParam);
+      setActiveTab('multiplayer');
+      setMultiplayerMode('play');
+    }
+  }, [location]);
 
   // Fetch countries for the quiz
   useEffect(() => {
@@ -65,7 +69,20 @@ const FlagQuiz = () => {
     if (storedLeaderboard) {
       setLeaderboard(JSON.parse(storedLeaderboard));
     }
+
+    // Load player name from localStorage if available
+    const savedPlayerName = localStorage.getItem('flagQuizPlayerName');
+    if (savedPlayerName) {
+      setPlayerName(savedPlayerName);
+    }
   }, []);
+
+  // Save player name to localStorage when it changes
+  useEffect(() => {
+    if (playerName) {
+      localStorage.setItem('flagQuizPlayerName', playerName);
+    }
+  }, [playerName]);
 
   // Update leaderboard with new score
   const updateLeaderboard = (name: string, score: number) => {
@@ -83,64 +100,12 @@ const FlagQuiz = () => {
     });
   };
 
-  // Create a new lobby
-  const handleCreateLobby = () => {
-    if (!playerName) {
-      toast({
-        title: "Enter Your Name",
-        description: "Please enter your name before creating a lobby.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    const newLobbyCode = generateLobbyCode();
-    setLobbyCode(newLobbyCode);
-    setMultiplayerMode('play');
-    
+  // Copy lobby code to clipboard
+  const handleCopyLobbyCode = () => {
+    navigator.clipboard.writeText(lobbyCode);
     toast({
-      title: "Lobby Created",
-      description: `Your lobby code is: ${newLobbyCode}`,
-    });
-  };
-
-  // Join an existing lobby
-  const handleJoinLobby = () => {
-    if (!playerName) {
-      toast({
-        title: "Enter Your Name",
-        description: "Please enter your name before joining a lobby.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!joinLobbyCode) {
-      toast({
-        title: "Enter Lobby Code",
-        description: "Please enter a lobby code to join.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // In a real implementation, this would verify the lobby code with a backend
-    // For now, we'll just accept any valid format
-    if (joinLobbyCode.length !== 5) {
-      toast({
-        title: "Invalid Code",
-        description: "The lobby code should be 5 characters long.",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setLobbyCode(joinLobbyCode.toUpperCase());
-    setMultiplayerMode('play');
-    
-    toast({
-      title: "Lobby Joined",
-      description: `You've joined lobby: ${joinLobbyCode.toUpperCase()}`,
+      title: "Copied!",
+      description: "Lobby code copied to clipboard",
     });
   };
 
@@ -149,15 +114,6 @@ const FlagQuiz = () => {
     setMultiplayerMode('create');
     setLobbyCode('');
     setJoinLobbyCode('');
-  };
-
-  // Copy lobby code to clipboard
-  const handleCopyLobbyCode = () => {
-    navigator.clipboard.writeText(lobbyCode);
-    toast({
-      title: "Copied!",
-      description: "Lobby code copied to clipboard",
-    });
   };
 
   return (
@@ -197,6 +153,19 @@ const FlagQuiz = () => {
                 <p className="text-muted-foreground">Test your knowledge of world flags. Answer as many questions correctly as you can!</p>
               </div>
               
+              <div className="mb-4">
+                <label htmlFor="player-name-solo" className="block text-sm font-medium mb-1">
+                  Your Name (for Leaderboard)
+                </label>
+                <Input
+                  id="player-name-solo"
+                  placeholder="Enter your name"
+                  value={playerName}
+                  onChange={e => setPlayerName(e.target.value)}
+                  className="max-w-xs"
+                />
+              </div>
+              
               {isLoading ? (
                 <div className="text-center py-8">
                   <p>Loading quiz...</p>
@@ -210,7 +179,7 @@ const FlagQuiz = () => {
                     } else {
                       toast({
                         title: "Enter Your Name",
-                        description: "Set a name in the multiplayer tab to save your score to the leaderboard!",
+                        description: "Set a name to save your score to the leaderboard!",
                       });
                     }
                   }}
@@ -279,33 +248,19 @@ const FlagQuiz = () => {
                       
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                         <div>
-                          <h3 className="text-base font-medium mb-2">Create a New Game</h3>
+                          <h3 className="text-base font-medium mb-2">Join the Real-Time Multiplayer</h3>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Our multiplayer feature now uses a backend server to coordinate games in real-time!
+                          </p>
                           <Button 
                             className="w-full" 
-                            onClick={handleCreateLobby}
-                            disabled={!playerName}
+                            onClick={() => {
+                              setActiveTab('multiplayer');
+                              setMultiplayerMode('create');
+                            }}
                           >
-                            Create Lobby
+                            Go to Multiplayer
                           </Button>
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-base font-medium mb-2">Join an Existing Game</h3>
-                          <div className="flex gap-2">
-                            <Input
-                              placeholder="Enter lobby code"
-                              value={joinLobbyCode}
-                              onChange={e => setJoinLobbyCode(e.target.value.toUpperCase())}
-                              maxLength={5}
-                              className="flex-1"
-                            />
-                            <Button 
-                              onClick={handleJoinLobby}
-                              disabled={!playerName || !joinLobbyCode}
-                            >
-                              Join
-                            </Button>
-                          </div>
                         </div>
                       </div>
                     </div>

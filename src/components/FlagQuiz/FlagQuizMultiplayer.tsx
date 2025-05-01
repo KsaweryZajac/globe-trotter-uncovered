@@ -1,34 +1,13 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
-import { FlagIcon, UsersIcon, CheckIcon, XIcon, RefreshCwIcon, TrophyIcon } from 'lucide-react';
+import { FlagIcon, UsersIcon, CheckIcon, XIcon, RefreshCwIcon, TrophyIcon, LoaderIcon } from 'lucide-react';
 import type { Country } from '@/services/api';
-
-// Generate a random lobby code
-const generateLobbyCode = () => {
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoiding similar looking characters
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return code;
-};
-
-// Mock player data for demo purposes
-const mockPlayers = [
-  { id: '1', name: 'Player1', score: 0, avatar: '👨‍💻' },
-  { id: '2', name: 'Player2', score: 0, avatar: '👩‍💻' },
-];
-
-interface Player {
-  id: string;
-  name: string;
-  score: number;
-  avatar: string;
-}
+import flagQuizApi, { Player, Lobby } from '@/services/flagQuizApi';
 
 interface FlagQuizMultiplayerProps {
   countries: Country[];
@@ -47,6 +26,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
   isLoading = false,
   initialLobbyCode = null
 }) => {
+  // Game state
   const [gameState, setGameState] = useState<'join' | 'lobby' | 'playing' | 'results'>(
     initialLobbyCode ? 'lobby' : 'join'
   );
@@ -65,31 +45,36 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
   const [optionsCount, setOptionsCount] = useState(4);
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [gameStartTime, setGameStartTime] = useState<number | null>(null);
+  const [playerId, setPlayerId] = useState<string>('');
+  const [isPolling, setIsPolling] = useState<boolean>(false);
+  const [loadingState, setLoadingState] = useState<string>('');
+  
+  // Refs
+  const pollingIntervalRef = useRef<number | null>(null);
 
   const { toast } = useToast();
   const navigate = useNavigate();
   
   // Initialize quiz on state change
   useEffect(() => {
-    if (gameState === 'playing' && countries.length > 0) {
+    if (gameState === 'playing' && countries.length > 0 && quizCountries.length === 0) {
       initializeQuiz();
     }
   }, [gameState, countries]);
-
-  // Initialize lobby on joining with code
-  useEffect(() => {
-    if (initialLobbyCode && gameState === 'lobby' && players.length === 0) {
-      // Simulate joining an existing lobby
-      setPlayers(mockPlayers);
-      setIsHost(false);
-      
-      toast({
-        title: "Joined Lobby",
-        description: `You've joined lobby ${initialLobbyCode}`,
-      });
-    }
-  }, [initialLobbyCode, gameState, players.length, toast]);
   
+  // Poll for lobby state updates
+  useEffect(() => {
+    if ((gameState === 'lobby' || gameState === 'playing') && lobbyCode) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+    
+    return () => {
+      stopPolling();
+    };
+  }, [gameState, lobbyCode]);
+
   // Generate options when current question changes
   useEffect(() => {
     if (quizCountries.length > 0 && gameState === 'playing') {
@@ -116,6 +101,39 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
       return () => clearInterval(timer);
     }
   }, [gameState, gameStartTime]);
+
+  const startPolling = () => {
+    if (isPolling) return;
+    
+    setIsPolling(true);
+    
+    // Poll for lobby updates every 2 seconds
+    const intervalId = window.setInterval(async () => {
+      if (lobbyCode) {
+        const updatedLobby = await flagQuizApi.getLobbyState(lobbyCode);
+        
+        if (updatedLobby) {
+          setPlayers(updatedLobby.players);
+          
+          // If we're in lobby and game has started, transition to playing
+          if (gameState === 'lobby' && updatedLobby.started) {
+            setGameState('playing');
+            initializeQuiz();
+          }
+        }
+      }
+    }, 2000);
+    
+    pollingIntervalRef.current = intervalId;
+  };
+  
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      window.clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+      setIsPolling(false);
+    }
+  };
 
   const initializeQuiz = () => {
     // Get a random subset of countries for the quiz
@@ -148,7 +166,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
     setQuizOptions(allOptions);
   };
 
-  const handleCreateLobby = () => {
+  const handleCreateLobby = async () => {
     if (!localPlayerName.trim()) {
       toast({
         title: "Name Required",
@@ -158,28 +176,45 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
       return;
     }
     
-    // Generate new lobby code
-    const newLobbyCode = generateLobbyCode();
-    setLobbyCode(newLobbyCode);
+    setLoadingState('creating');
     
-    // Create the lobby with the current player as host
-    setPlayers([{
-      id: '0',
-      name: localPlayerName,
-      score: 0,
-      avatar: '👑'
-    }]);
-    
-    setIsHost(true);
-    setGameState('lobby');
-    
-    toast({
-      title: "Lobby Created",
-      description: `Share the code "${newLobbyCode}" with friends to join!`,
-    });
+    try {
+      const response = await flagQuizApi.createLobby(localPlayerName);
+      
+      if (response.success) {
+        setLobbyCode(response.lobby.code);
+        setPlayerId(response.playerId);
+        setPlayers(response.lobby.players);
+        setIsHost(true);
+        setGameState('lobby');
+        
+        // Update URL with lobby code
+        navigate(`/flag-quiz?lobby=${response.lobby.code}`);
+        
+        toast({
+          title: "Lobby Created",
+          description: `Share the code "${response.lobby.code}" with friends to join!`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to create lobby",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+      console.error("Error creating lobby:", error);
+    } finally {
+      setLoadingState('');
+    }
   };
 
-  const handleJoinLobby = () => {
+  const handleJoinLobby = async () => {
     if (!localPlayerName.trim()) {
       toast({
         title: "Name Required",
@@ -189,42 +224,54 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
       return;
     }
     
-    if (!joinCode.trim() || joinCode.length !== 6) {
+    if (!joinCode.trim() || joinCode.length !== 5) {
       toast({
         title: "Invalid Code",
-        description: "Please enter a valid 6-character lobby code",
+        description: "Please enter a valid 5-character lobby code",
         variant: "destructive"
       });
       return;
     }
     
-    // In a real implementation, we would verify the lobby exists here
-    setLobbyCode(joinCode.toUpperCase());
+    setLoadingState('joining');
     
-    // Add the player to the mock lobby
-    setPlayers([
-      ...mockPlayers,
-      {
-        id: '3',
-        name: localPlayerName,
-        score: 0,
-        avatar: '🧑'
+    try {
+      const response = await flagQuizApi.joinLobby(joinCode.toUpperCase(), localPlayerName);
+      
+      if (response.success) {
+        setLobbyCode(response.lobby.code);
+        setPlayerId(response.playerId);
+        setPlayers(response.lobby.players);
+        setIsHost(false);
+        setGameState('lobby');
+        
+        // Update URL with lobby code
+        navigate(`/flag-quiz?lobby=${response.lobby.code}`);
+        
+        toast({
+          title: "Joined Lobby",
+          description: `You've joined lobby ${response.lobby.code}`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: response.message || "Failed to join lobby",
+          variant: "destructive"
+        });
       }
-    ]);
-    
-    setIsHost(false);
-    setGameState('lobby');
-    
-    // Update URL with lobby code
-    navigate(`/flag-quiz?lobby=${joinCode.toUpperCase()}`);
-    
-    toast({
-      title: "Joined Lobby",
-      description: `You've joined lobby ${joinCode.toUpperCase()}`,
-    });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+      console.error("Error joining lobby:", error);
+    } finally {
+      setLoadingState('');
+    }
   };
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     if (players.length < 1) {
       toast({
         title: "Not Enough Players",
@@ -234,40 +281,91 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
       return;
     }
     
-    setGameState('playing');
-    toast({
-      title: "Game Starting",
-      description: "The quiz has begun! Good luck!",
-    });
+    setLoadingState('starting');
+    
+    try {
+      // Initialize a subset of countries for the quiz
+      const shuffled = [...countries].sort(() => 0.5 - Math.random());
+      const selectedCountries = shuffled.slice(0, 10); // 10 questions per quiz
+      
+      const gameState = await flagQuizApi.startGame(lobbyCode, playerId, selectedCountries);
+      
+      if (gameState) {
+        setQuizCountries(selectedCountries);
+        setGameState('playing');
+        setGameStartTime(Date.now());
+        setTimeLeft(120); // 2 minutes
+        
+        toast({
+          title: "Game Starting",
+          description: "The quiz has begun! Good luck!",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to start the game",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+      console.error("Error starting game:", error);
+    } finally {
+      setLoadingState('');
+    }
   };
 
-  const handleOptionSelect = (country: Country) => {
+  const handleOptionSelect = async (country: Country) => {
     const correctCountry = quizCountries[currentIndex];
     const isCorrect = country.cca3 === correctCountry.cca3;
     
     setResult(isCorrect ? 'correct' : 'incorrect');
     setUserAnswer(country.name.common);
     
-    if (isCorrect) {
-      setScore(prev => prev + 1);
-      toast({
-        title: "Correct!",
-        description: `${country.name.common} is the right answer!`,
-      });
+    try {
+      // Submit the answer to the backend
+      const submission = {
+        lobbyCode,
+        playerId,
+        questionIndex: currentIndex,
+        selectedCountryId: country.cca3,
+        timeElapsed: gameStartTime ? Date.now() - gameStartTime : 0
+      };
       
-      // Update player score
-      setPlayers(players.map(p => 
-        p.name === localPlayerName ? { ...p, score: p.score + 1 } : p
-      ));
-    } else {
-      toast({
-        title: "Incorrect",
-        description: `The correct answer was ${correctCountry.name.common}`,
-        variant: "destructive"
-      });
+      const result = await flagQuizApi.submitAnswer(submission, correctCountry.cca3);
+      
+      if (result.success && result.updatedLobby) {
+        // Update the players with their new scores
+        setPlayers(result.updatedLobby.players);
+        
+        if (isCorrect) {
+          setScore(prev => prev + 1);
+          toast({
+            title: "Correct!",
+            description: `${country.name.common} is the right answer!`,
+          });
+        } else {
+          toast({
+            title: "Incorrect",
+            description: `The correct answer was ${correctCountry.name.common}`,
+            variant: "destructive"
+          });
+        }
+        
+        setTotalAnswered(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error("Error submitting answer:", error);
+      // Continue with the local game even if API fails
+      if (isCorrect) {
+        setScore(prev => prev + 1);
+      }
+      setTotalAnswered(prev => prev + 1);
     }
-    
-    setTotalAnswered(prev => prev + 1);
   };
 
   const handleNextQuestion = () => {
@@ -281,40 +379,68 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
     }
   };
   
-  const endGame = () => {
-    // Sort players by score
-    const sortedPlayers = [...players].sort((a, b) => b.score - a.score);
-    setPlayers(sortedPlayers);
+  const endGame = async () => {
+    try {
+      // Notify the backend that the game has ended
+      const finalLobby = await flagQuizApi.endGame(lobbyCode);
+      
+      if (finalLobby) {
+        // Sort players by score
+        setPlayers(finalLobby.players);
+      }
+      
+      // Go to results screen
+      setGameState('results');
+      
+      // Call onGameComplete if provided
+      if (onGameComplete) {
+        onGameComplete(score, quizCountries.length);
+      }
+      
+      toast({
+        title: "Quiz completed!",
+        description: `Your final score: ${score} out of ${quizCountries.length}`,
+      });
+    } catch (error) {
+      console.error("Error ending game:", error);
+      // Continue to results even if API fails
+      setGameState('results');
+      
+      if (onGameComplete) {
+        onGameComplete(score, quizCountries.length);
+      }
+    }
+  };
+  
+  const handlePlayAgain = async () => {
+    // Reset game state and return to lobby
+    setGameState('lobby');
     
-    // Go to results screen
-    setGameState('results');
-    
-    // Call onGameComplete if provided
-    if (onGameComplete) {
-      onGameComplete(score, quizCountries.length);
+    // Force a lobby refresh
+    const updatedLobby = await flagQuizApi.getLobbyState(lobbyCode);
+    if (updatedLobby) {
+      setPlayers(updatedLobby.players);
+    }
+  };
+  
+  const handleLeaveLobby = async () => {
+    if (lobbyCode && playerId) {
+      try {
+        await flagQuizApi.leaveLobby(lobbyCode, playerId);
+      } catch (error) {
+        console.error("Error leaving lobby:", error);
+      }
     }
     
-    toast({
-      title: "Quiz completed!",
-      description: `Your final score: ${score} out of ${quizCountries.length}`,
-    });
-  };
-  
-  const handlePlayAgain = () => {
-    // Reset scores for everyone
-    setPlayers(players.map(p => ({ ...p, score: 0 })));
-    
-    // Go back to lobby
-    setGameState('lobby');
-  };
-  
-  const handleLeaveLobby = () => {
     // Clear all game state
     setPlayers([]);
     setLobbyCode('');
     setJoinCode('');
+    setPlayerId('');
     setIsHost(false);
     setGameState('join');
+    
+    // Remove lobby code from URL
     navigate('/flag-quiz');
   };
 
@@ -337,7 +463,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
             <UsersIcon className="h-5 w-5" />
             Multiplayer Flag Quiz
           </CardTitle>
-          <CardDescription>Play with friends! Create or join a lobby.</CardDescription>
+          <CardDescription>Play with friends in real-time! Create or join a lobby.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
@@ -358,9 +484,16 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
               <Button 
                 className="w-full" 
                 onClick={handleCreateLobby}
-                disabled={!localPlayerName.trim()}
+                disabled={!localPlayerName.trim() || loadingState === 'creating'}
               >
-                Create Lobby
+                {loadingState === 'creating' ? (
+                  <>
+                    <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Lobby'
+                )}
               </Button>
             </div>
             
@@ -368,18 +501,25 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
               <h3 className="font-semibold">Join a Lobby</h3>
               <div className="space-y-2">
                 <Input 
-                  placeholder="Enter 6-character lobby code" 
+                  placeholder="Enter 5-character lobby code" 
                   value={joinCode} 
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  maxLength={6}
+                  maxLength={5}
                 />
                 <Button 
                   variant="secondary" 
                   className="w-full"
                   onClick={handleJoinLobby}
-                  disabled={!localPlayerName.trim() || !joinCode.trim() || joinCode.length !== 6}
+                  disabled={!localPlayerName.trim() || !joinCode.trim() || joinCode.length !== 5 || loadingState === 'joining'}
                 >
-                  Join Lobby
+                  {loadingState === 'joining' ? (
+                    <>
+                      <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />
+                      Joining...
+                    </>
+                  ) : (
+                    'Join Lobby'
+                  )}
                 </Button>
               </div>
             </div>
@@ -411,7 +551,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
                   <div className="flex items-center gap-2">
                     <span className="text-xl">{player.avatar}</span>
                     <span>{player.name}</span>
-                    {player.id === '0' && <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-0.5 rounded">Host</span>}
+                    {player.isHost && <span className="text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200 px-2 py-0.5 rounded">Host</span>}
                   </div>
                   <div>Score: {player.score}</div>
                 </div>
@@ -448,8 +588,18 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
           </Button>
           
           {isHost && (
-            <Button onClick={handleStartGame}>
-              Start Game
+            <Button 
+              onClick={handleStartGame} 
+              disabled={loadingState === 'starting'}
+            >
+              {loadingState === 'starting' ? (
+                <>
+                  <LoaderIcon className="h-4 w-4 mr-2 animate-spin" />
+                  Starting...
+                </>
+              ) : (
+                'Start Game'
+              )}
             </Button>
           )}
         </CardFooter>
