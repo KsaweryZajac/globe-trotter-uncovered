@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
-import { GlobeIcon, HeartIcon, MapIcon } from 'lucide-react';
+import { GlobeIcon, HeartIcon, MapIcon, FlagIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import FlagQuizCard from '@/components/FlagQuiz/FlagQuizCard';
 import api from '@/services/api';
@@ -51,7 +51,7 @@ const Index = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -59,13 +59,13 @@ const Index = () => {
                 Search Countries
               </CardTitle>
               <CardDescription>
-                Explore countries around the world and learn about their culture
+                Explore countries around the world
               </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
                 Search for any country by name or discover a random one. 
-                View detailed information, latest news, and get interesting translations.
+                View detailed information and get interesting translations.
               </p>
             </CardContent>
             <CardFooter>
@@ -84,7 +84,7 @@ const Index = () => {
                 Favorite Countries
               </CardTitle>
               <CardDescription>
-                Access your collection of favorite countries
+                Access your favorite countries
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -126,10 +126,57 @@ const Index = () => {
               </Link>
             </CardFooter>
           </Card>
+          
+          <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FlagIcon className="h-5 w-5" />
+                Flag Quiz
+              </CardTitle>
+              <CardDescription>
+                Test your flag knowledge
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Play solo or multiplayer flag quizzes. Challenge friends with 
+                our interactive multiplayer mode and compete for the high score.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Link to="/flag-quiz" className="w-full">
+                <Button className="w-full" variant="outline">
+                  Play Quiz
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
         </div>
 
         <div className="max-w-6xl mx-auto mt-12">
-          {!isLoading && <FlagQuizCard countries={countries} />}
+          {!isLoading && countries.length > 0 && (
+            <Card className="w-full shadow-sm hover:shadow-md transition-shadow px-4 py-4">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <FlagIcon className="h-5 w-5" />
+                  Flag Quiz Preview
+                </CardTitle>
+                <CardDescription>
+                  Test your knowledge of world flags with our interactive quiz!
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="mb-4 text-center">
+                  Try a sample of our flag quiz below or visit the{" "}
+                  <Link to="/flag-quiz" className="text-primary hover:underline">
+                    full Flag Quiz page
+                  </Link>{" "}
+                  for solo and multiplayer options.
+                </p>
+                <FlagQuizCard countries={countries} />
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <div className="text-center mt-16">
@@ -151,10 +198,10 @@ const Index = () => {
                 View Favorites
               </Button>
             </Link>
-            <Link to="/trip-planner">
+            <Link to="/flag-quiz">
               <Button size="lg" variant="outline" className="gap-2">
-                <MapIcon className="h-5 w-5" />
-                Plan a Trip
+                <FlagIcon className="h-5 w-5" />
+                Flag Quiz
               </Button>
             </Link>
           </div>

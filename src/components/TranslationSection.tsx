@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { GlobeIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 interface TranslationSectionProps {
   countryName: string;
@@ -44,6 +44,8 @@ const TranslationSection = ({
   }, [countryName]);
 
   const handleTranslate = () => {
+    if (!countryName) return;
+    
     onTranslate(countryName, selectedLanguage);
     
     // Show a toast notification when translation starts
@@ -78,7 +80,7 @@ const TranslationSection = ({
             variant="outline"
             size="sm"
             onClick={handleTranslate}
-            disabled={isLoading}
+            disabled={isLoading || !countryName}
             className="flex-shrink-0"
           >
             <GlobeIcon className="h-4 w-4 mr-1" />
