@@ -1,10 +1,10 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { GlobeIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface TranslationSectionProps {
   countryName: string;
@@ -36,6 +36,12 @@ const TranslationSection = ({
 }: TranslationSectionProps) => {
   const [selectedLanguage, setSelectedLanguage] = useState("es");
   const { toast } = useToast();
+  
+  // Reset translation state when country changes
+  useEffect(() => {
+    // Reset UI when country changes
+    setSelectedLanguage("es");
+  }, [countryName]);
 
   const handleTranslate = () => {
     onTranslate(countryName, selectedLanguage);

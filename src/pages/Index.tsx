@@ -1,11 +1,34 @@
 
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
-import { GlobeIcon, HeartIcon } from 'lucide-react';
+import { GlobeIcon, HeartIcon, MapIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import FlagQuizCard from '@/components/FlagQuiz/FlagQuizCard';
+import api from '@/services/api';
 
 const Index = () => {
+  const [countries, setCountries] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch a set of random countries for the flag quiz
+  useEffect(() => {
+    const fetchCountries = async () => {
+      try {
+        const response = await fetch('https://restcountries.com/v3.1/all');
+        const data = await response.json();
+        setCountries(data);
+      } catch (error) {
+        console.error('Failed to fetch countries:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchCountries();
+  }, []);
+
   return (
     <div className="min-h-screen pb-8">
       {/* Header */}
@@ -28,7 +51,7 @@ const Index = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -78,13 +101,42 @@ const Index = () => {
               </Link>
             </CardFooter>
           </Card>
+          
+          <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MapIcon className="h-5 w-5" />
+                Trip Planner
+              </CardTitle>
+              <CardDescription>
+                Plan your next adventure
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Create detailed travel itineraries, explore destinations, 
+                check weather forecasts, and estimate costs for your trips.
+              </p>
+            </CardContent>
+            <CardFooter>
+              <Link to="/trip-planner" className="w-full">
+                <Button className="w-full" variant="outline">
+                  Plan a Trip
+                </Button>
+              </Link>
+            </CardFooter>
+          </Card>
+        </div>
+
+        <div className="max-w-6xl mx-auto mt-12">
+          {!isLoading && <FlagQuizCard countries={countries} />}
         </div>
 
         <div className="text-center mt-16">
           <div className="text-7xl mb-4 animate-float">🗺️</div>
           <h3 className="text-2xl font-bold mb-2">Ready to explore?</h3>
           <p className="text-muted-foreground mb-6">
-            Start your cultural journey by searching for a country or checking your favorites.
+            Start your cultural journey by searching for a country, planning a trip, or testing your knowledge with our flag quiz.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/search">
@@ -97,6 +149,12 @@ const Index = () => {
               <Button size="lg" variant="outline" className="gap-2">
                 <HeartIcon className="h-5 w-5" />
                 View Favorites
+              </Button>
+            </Link>
+            <Link to="/trip-planner">
+              <Button size="lg" variant="outline" className="gap-2">
+                <MapIcon className="h-5 w-5" />
+                Plan a Trip
               </Button>
             </Link>
           </div>
