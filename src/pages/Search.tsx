@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import api, { Country, NewsArticle, Weather } from '@/services/api';
@@ -44,14 +45,15 @@ const Search = () => {
     setSearchedCountry(null);
 
     try {
-      const countries = await api.getCountryByName(query);
-      if (countries && countries.length > 0) {
-        setSearchedCountry(countries[0]);
+      // Fix: getCountryByName returns a single Country object, not an array
+      const country = await api.getCountryByName(query);
+      if (country) {
+        setSearchedCountry(country);
         
         // Fetch related data
-        fetchNews(countries[0].name.common);
-        if (countries[0].capital && countries[0].capital.length > 0) {
-          fetchWeather(countries[0].capital[0]);
+        fetchNews(country.name.common);
+        if (country.capital && country.capital.length > 0) {
+          fetchWeather(country.capital[0]);
         }
       } else {
         setCountryError('No country found with that name.');
