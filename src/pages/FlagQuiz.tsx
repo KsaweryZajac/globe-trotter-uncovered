@@ -67,6 +67,22 @@ const FlagQuiz = () => {
     }
   }, []);
 
+  // Update leaderboard with new score
+  const updateLeaderboard = (name: string, score: number) => {
+    const newEntry = { name, score, date: new Date().toISOString() };
+    const updatedLeaderboard = [...leaderboard, newEntry]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10); // Keep only top 10
+    
+    setLeaderboard(updatedLeaderboard);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLeaderboard));
+    
+    toast({
+      title: "Score Saved",
+      description: `Your score of ${score} has been added to the leaderboard!`,
+    });
+  };
+
   // Create a new lobby
   const handleCreateLobby = () => {
     if (!playerName) {
@@ -141,22 +157,6 @@ const FlagQuiz = () => {
     toast({
       title: "Copied!",
       description: "Lobby code copied to clipboard",
-    });
-  };
-
-  // Update leaderboard with new score
-  const updateLeaderboard = (name: string, score: number) => {
-    const newEntry = { name, score, date: new Date().toISOString() };
-    const updatedLeaderboard = [...leaderboard, newEntry]
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10); // Keep only top 10
-    
-    setLeaderboard(updatedLeaderboard);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedLeaderboard));
-    
-    toast({
-      title: "Score Saved",
-      description: `Your score of ${score} has been added to the leaderboard!`,
     });
   };
 

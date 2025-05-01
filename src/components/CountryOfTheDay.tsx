@@ -52,13 +52,16 @@ const CountryOfTheDay: React.FC = () => {
       
       return newCountry;
     },
-    onError: (err) => {
-      console.error("Error fetching country of the day:", err);
-      toast({
-        title: "Error",
-        description: "Could not load country of the day",
-        variant: "destructive"
-      });
+    // Use onSettled instead of onError in the new version of react-query
+    meta: {
+      onError: (err: any) => {
+        console.error("Error fetching country of the day:", err);
+        toast({
+          title: "Error",
+          description: "Could not load country of the day",
+          variant: "destructive"
+        });
+      }
     }
   });
 

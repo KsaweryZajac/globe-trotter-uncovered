@@ -9,9 +9,10 @@ import type { Country } from '@/services/api';
 
 interface FlagQuizProps {
   countries: Country[];
+  onGameComplete?: (score: number, total: number) => void;
 }
 
-const FlagQuizCard: React.FC<FlagQuizProps> = ({ countries }) => {
+const FlagQuizCard: React.FC<FlagQuizProps> = ({ countries, onGameComplete }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [quizCountries, setQuizCountries] = useState<Country[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -106,6 +107,11 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ countries }) => {
         title: "Quiz completed!",
         description: `Your final score: ${score + (result === 'correct' ? 1 : 0)} out of ${quizCountries.length}`,
       });
+      
+      // Call onGameComplete if provided
+      if (onGameComplete) {
+        onGameComplete(score + (result === 'correct' ? 1 : 0), quizCountries.length);
+      }
       
       // Reset for a new quiz
       initializeQuiz();

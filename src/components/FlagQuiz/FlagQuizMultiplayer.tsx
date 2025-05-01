@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,21 +32,27 @@ interface Player {
 
 interface FlagQuizMultiplayerProps {
   countries: Country[];
-  initialLobbyCode: string | null;
-  isLoading: boolean;
+  playerName?: string;
+  lobbyCode?: string;
+  onGameComplete?: (score: number, total: number) => void;
+  isLoading?: boolean;
+  initialLobbyCode?: string | null;
 }
 
 const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({ 
   countries, 
-  initialLobbyCode,
-  isLoading 
+  playerName = '',
+  lobbyCode: initialLobbyCodeProp = '',
+  onGameComplete,
+  isLoading = false,
+  initialLobbyCode = null
 }) => {
   const [gameState, setGameState] = useState<'join' | 'lobby' | 'playing' | 'results'>(
     initialLobbyCode ? 'lobby' : 'join'
   );
-  const [lobbyCode, setLobbyCode] = useState<string>(initialLobbyCode || '');
+  const [lobbyCode, setLobbyCode] = useState<string>(initialLobbyCodeProp || initialLobbyCode || '');
   const [joinCode, setJoinCode] = useState<string>('');
-  const [playerName, setPlayerName] = useState<string>('');
+  const [localPlayerName, setLocalPlayerName] = useState<string>(playerName);
   const [players, setPlayers] = useState<Player[]>([]);
   const [isHost, setIsHost] = useState<boolean>(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -144,7 +149,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
   };
 
   const handleCreateLobby = () => {
-    if (!playerName.trim()) {
+    if (!localPlayerName.trim()) {
       toast({
         title: "Name Required",
         description: "Please enter your name to create a lobby",
@@ -160,7 +165,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
     // Create the lobby with the current player as host
     setPlayers([{
       id: '0',
-      name: playerName,
+      name: localPlayerName,
       score: 0,
       avatar: '👑'
     }]);
@@ -175,7 +180,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
   };
 
   const handleJoinLobby = () => {
-    if (!playerName.trim()) {
+    if (!localPlayerName.trim()) {
       toast({
         title: "Name Required",
         description: "Please enter your name to join a lobby",
@@ -201,7 +206,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
       ...mockPlayers,
       {
         id: '3',
-        name: playerName,
+        name: localPlayerName,
         score: 0,
         avatar: '🧑'
       }
@@ -252,7 +257,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
       
       // Update player score
       setPlayers(players.map(p => 
-        p.name === playerName ? { ...p, score: p.score + 1 } : p
+        p.name === localPlayerName ? { ...p, score: p.score + 1 } : p
       ));
     } else {
       toast({
@@ -283,6 +288,11 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
     
     // Go to results screen
     setGameState('results');
+    
+    // Call onGameComplete if provided
+    if (onGameComplete) {
+      onGameComplete(score, quizCountries.length);
+    }
     
     toast({
       title: "Quiz completed!",
@@ -334,8 +344,8 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
             <label className="text-sm font-medium">Your Name</label>
             <Input 
               placeholder="Enter your name" 
-              value={playerName} 
-              onChange={(e) => setPlayerName(e.target.value)}
+              value={localPlayerName} 
+              onChange={(e) => setLocalPlayerName(e.target.value)}
             />
           </div>
 
@@ -348,7 +358,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
               <Button 
                 className="w-full" 
                 onClick={handleCreateLobby}
-                disabled={!playerName.trim()}
+                disabled={!localPlayerName.trim()}
               >
                 Create Lobby
               </Button>
@@ -367,7 +377,7 @@ const FlagQuizMultiplayer: React.FC<FlagQuizMultiplayerProps> = ({
                   variant="secondary" 
                   className="w-full"
                   onClick={handleJoinLobby}
-                  disabled={!playerName.trim() || !joinCode.trim() || joinCode.length !== 6}
+                  disabled={!localPlayerName.trim() || !joinCode.trim() || joinCode.length !== 6}
                 >
                   Join Lobby
                 </Button>
