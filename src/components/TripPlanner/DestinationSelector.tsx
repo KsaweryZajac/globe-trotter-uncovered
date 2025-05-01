@@ -1,22 +1,30 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { TrashIcon, MapPinIcon, SearchIcon, GlobeIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { Country } from '@/services/api';
-import tripPlannerApi, { PointOfInterest } from '@/services/tripPlannerApi';
-import { TripDestination } from './TripForm';
+import { TrashIcon } from 'lucide-react';
+import { Country } from '@/services/api';
+import { PointOfInterest } from '@/services/tripPlannerApi';
+import tripPlannerApi from '@/services/tripPlannerApi';
 
 interface DestinationSelectorProps {
   countries: Country[];
-  destination: TripDestination;
+  destination: {
+    country: Country;
+    city: string;
+    pointsOfInterest: PointOfInterest[];
+    selectedPOIs: PointOfInterest[];
+  };
   savedCities: Record<string, string[]>;
-  onChange: (destination: Partial<TripDestination>) => void;
+  onChange: (destination: Partial<{
+    country: Country;
+    city: string;
+    pointsOfInterest: PointOfInterest[];
+    selectedPOIs: PointOfInterest[];
+  }>) => void;
   onRemove: () => void;
 }
 
@@ -25,255 +33,168 @@ const DestinationSelector: React.FC<DestinationSelectorProps> = ({
   destination,
   savedCities,
   onChange,
-  onRemove
+  onRemove,
 }) => {
   const [isLoadingPOIs, setIsLoadingPOIs] = useState(false);
-  const [cityInput, setCityInput] = useState(destination.city || '');
+  const [suggestedCities, setSuggestedCities] = useState<string[]>([]);
 
-  // Get cities for the selected country
-  const citiesForCountry = destination.country?.cca3 
-    ? (savedCities[destination.country.cca3] || [])
-    : [];
-
-  // Update available POIs when country/city changes
+  // Get suggested cities for selected country
   useEffect(() => {
-    if (destination.country && destination.city) {
+    if (destination.country?.name?.common) {
+      const countryName = destination.country.name.common;
+      const cities = savedCities[countryName] || [];
+      
+      // Add the capital if available
+      if (destination.country.capital && destination.country.capital.length > 0) {
+        const capital = destination.country.capital[0];
+        if (!cities.includes(capital)) {
+          cities.unshift(capital);
+        }
+      }
+      
+      setSuggestedCities(cities);
+    }
+  }, [destination.country, savedCities]);
+
+  // Fetch points of interest when city is selected
+  useEffect(() => {
+    const fetchPointsOfInterest = async () => {
+      if (!destination.city || !destination.country?.name?.common) return;
+      
       setIsLoadingPOIs(true);
       try {
-        // Get mock POIs for this city/country
-        const pois = tripPlannerApi.getMockPointsOfInterest(
-          destination.city,
-          destination.country.name.common
-        );
+        // Use the real data fetching function instead of mock data
+        const pois = await tripPlannerApi.getPointsOfInterest(destination.city, destination.country.name.common);
         onChange({ pointsOfInterest: pois });
       } catch (error) {
         console.error('Error fetching points of interest:', error);
-        onChange({ pointsOfInterest: [] });
       } finally {
         setIsLoadingPOIs(false);
       }
-    }
-  }, [destination.country, destination.city]);
+    };
+    
+    fetchPointsOfInterest();
+  }, [destination.city, destination.country]);
 
   // Handle country selection
-  const handleCountrySelect = (countryCode: string) => {
+  const handleCountrySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const countryCode = e.target.value;
     const selectedCountry = countries.find(c => c.cca3 === countryCode);
+    
     if (selectedCountry) {
       onChange({ 
         country: selectedCountry,
-        city: '',
-        pointsOfInterest: [],
-        selectedPOIs: []
+        city: '', // Reset city when country changes
+        pointsOfInterest: [], // Reset POIs
+        selectedPOIs: [] // Reset selected POIs
       });
-      setCityInput('');
     }
   };
 
-  // Handle city selection
-  const handleCitySelect = (city: string) => {
-    onChange({ city });
+  // Handle city input
+  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange({ city: e.target.value });
   };
 
-  // Handle custom city input
-  const handleCitySubmit = () => {
-    if (cityInput.trim()) {
-      onChange({ city: cityInput.trim() });
-    }
-  };
-
-  // Handle POI selection
-  const handlePOISelect = (poi: PointOfInterest, isChecked: boolean) => {
-    const currentSelectedPOIs = [...(destination.selectedPOIs || [])];
+  // Toggle POI selection
+  const togglePOI = (poi: PointOfInterest) => {
+    const isSelected = destination.selectedPOIs.some(p => p.id === poi.id);
     
-    if (isChecked) {
-      // Add POI if not already in the list
-      if (!currentSelectedPOIs.some(p => p.id === poi.id)) {
-        currentSelectedPOIs.push(poi);
-      }
+    if (isSelected) {
+      onChange({
+        selectedPOIs: destination.selectedPOIs.filter(p => p.id !== poi.id)
+      });
     } else {
-      // Remove POI if in the list
-      const index = currentSelectedPOIs.findIndex(p => p.id === poi.id);
-      if (index !== -1) {
-        currentSelectedPOIs.splice(index, 1);
-      }
-    }
-    
-    onChange({ selectedPOIs: currentSelectedPOIs });
-  };
-
-  // Get more details about a POI
-  const fetchPOIDetails = async (poi: PointOfInterest) => {
-    try {
-      const wikiData = await tripPlannerApi.getPointOfInterest(poi.name);
-      
-      // Update the POI with Wikipedia data
-      const updatedPOIs = destination.pointsOfInterest.map(p => 
-        p.id === poi.id 
-          ? { 
-              ...p, 
-              wikipediaData: wikiData,
-              image: wikiData.thumbnail?.source || p.image,
-              description: wikiData.extract || p.description,
-              link: wikiData.content_urls.desktop.page
-            } 
-          : p
-      );
-      
-      // Also update selected POIs if necessary
-      const updatedSelectedPOIs = destination.selectedPOIs.map(p => 
-        p.id === poi.id 
-          ? { 
-              ...p, 
-              wikipediaData: wikiData,
-              image: wikiData.thumbnail?.source || p.image,
-              description: wikiData.extract || p.description,
-              link: wikiData.content_urls.desktop.page
-            } 
-          : p
-      );
-      
-      onChange({ 
-        pointsOfInterest: updatedPOIs,
-        selectedPOIs: updatedSelectedPOIs
+      onChange({
+        selectedPOIs: [...destination.selectedPOIs, poi]
       });
-    } catch (error) {
-      console.error('Error fetching POI details:', error);
     }
   };
 
   return (
-    <Card className="border">
-      <CardContent className="pt-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label htmlFor={`country-${destination.country?.cca3 || 'new'}`}>Country</Label>
-            <Select 
-              value={destination.country?.cca3} 
-              onValueChange={handleCountrySelect}
-            >
-              <SelectTrigger id={`country-${destination.country?.cca3 || 'new'}`} className="w-[180px] mt-1">
-                <SelectValue placeholder="Select a country" />
-              </SelectTrigger>
-              <SelectContent>
-                {countries.map((country) => (
-                  <SelectItem key={country.cca3} value={country.cca3}>
-                    {country.name.common}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={onRemove}
-          >
-            <TrashIcon className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        {destination.country && (
-          <div>
-            <Label htmlFor="city-input">City</Label>
-            <div className="flex gap-2 mt-1">
-              <Input
-                id="city-input"
-                value={cityInput}
-                onChange={(e) => setCityInput(e.target.value)}
-                placeholder="Enter city name"
-                className="flex-1"
-              />
-              <Button onClick={handleCitySubmit} disabled={!cityInput.trim()}>
-                <SearchIcon className="h-4 w-4" />
-              </Button>
+    <Card className="border border-border">
+      <CardContent className="pt-4 pb-4">
+        <div className="grid grid-cols-[1fr_auto] gap-4">
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="country">Country</Label>
+                <select
+                  id="country"
+                  value={destination.country?.cca3 || ''}
+                  onChange={handleCountrySelect}
+                  className="w-full px-3 py-2 mt-1 border rounded-md"
+                >
+                  {countries.map((country) => (
+                    <option key={country.cca3} value={country.cca3}>
+                      {country.name.common}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  list="city-suggestions"
+                  value={destination.city}
+                  onChange={handleCityChange}
+                  placeholder="Enter city name"
+                  className="mt-1"
+                />
+                <datalist id="city-suggestions">
+                  {suggestedCities.map((city, index) => (
+                    <option key={index} value={city} />
+                  ))}
+                </datalist>
+              </div>
             </div>
             
-            {citiesForCountry.length > 0 && (
-              <div className="mt-2">
-                <Label>Suggested Cities</Label>
-                <div className="flex flex-wrap gap-1 mt-1">
-                  {citiesForCountry.map((city) => (
-                    <Button
-                      key={city}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleCitySelect(city)}
-                      className={cn("text-xs", 
-                        city === destination.city ? "bg-primary text-primary-foreground" : ""
-                      )}
-                    >
-                      <MapPinIcon className="h-3 w-3 mr-1" />
-                      {city}
-                    </Button>
+            {isLoadingPOIs ? (
+              <div className="text-center py-2">
+                <p className="text-sm text-muted-foreground">Loading attractions...</p>
+              </div>
+            ) : destination.pointsOfInterest.length > 0 ? (
+              <div>
+                <Label className="mb-2 block">Points of Interest</Label>
+                <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-2">
+                  {destination.pointsOfInterest.map((poi) => (
+                    <div key={poi.id} className="flex items-start space-x-2">
+                      <Checkbox
+                        id={`poi-${poi.id}`}
+                        checked={destination.selectedPOIs.some(p => p.id === poi.id)}
+                        onCheckedChange={() => togglePOI(poi)}
+                      />
+                      <div>
+                        <Label 
+                          htmlFor={`poi-${poi.id}`} 
+                          className="font-medium cursor-pointer"
+                        >
+                          {poi.name}
+                        </Label>
+                        <p className="text-sm text-muted-foreground">{poi.description}</p>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
-            )}
+            ) : destination.city ? (
+              <p className="text-sm text-muted-foreground">No points of interest found.</p>
+            ) : null}
           </div>
-        )}
-        
-        {destination.city && !isLoadingPOIs && destination.pointsOfInterest.length > 0 && (
-          <div className="mt-3">
-            <Label>Points of Interest</Label>
-            <div className="mt-2 space-y-2">
-              {destination.pointsOfInterest.map((poi) => {
-                const isSelected = destination.selectedPOIs?.some(p => p.id === poi.id) || false;
-                
-                return (
-                  <div key={poi.id} className="flex items-start gap-2 p-2 border rounded-md">
-                    <Checkbox 
-                      id={`poi-${poi.id}`}
-                      checked={isSelected}
-                      onCheckedChange={(checked) => handlePOISelect(poi, !!checked)}
-                      className="mt-1"
-                    />
-                    <div className="flex-1">
-                      <label
-                        htmlFor={`poi-${poi.id}`}
-                        className="text-sm font-medium leading-none cursor-pointer"
-                      >
-                        {poi.name}
-                      </label>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {poi.description?.substring(0, 100)}{poi.description?.length > 100 ? '...' : ''}
-                      </p>
-                      {!poi.wikipediaData && (
-                        <Button 
-                          variant="link" 
-                          size="sm" 
-                          className="p-0 h-auto mt-1 text-xs"
-                          onClick={() => fetchPOIDetails(poi)}
-                        >
-                          <GlobeIcon className="h-3 w-3 mr-1" />
-                          Get more info
-                        </Button>
-                      )}
-                      {poi.wikipediaData && poi.link && (
-                        <div className="mt-1">
-                          <a 
-                            href={poi.link} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-xs text-primary hover:underline"
-                          >
-                            <GlobeIcon className="h-3 w-3 inline mr-1" />
-                            View on Wikipedia
-                          </a>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          
+          <div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={onRemove}
+            >
+              <TrashIcon className="h-4 w-4" />
+            </Button>
           </div>
-        )}
-        
-        {destination.city && isLoadingPOIs && (
-          <div className="flex justify-center p-4">
-            <p className="text-sm text-muted-foreground">Loading points of interest...</p>
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

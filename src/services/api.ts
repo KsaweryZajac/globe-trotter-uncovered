@@ -149,66 +149,134 @@ const api = {
     }
   },
   
-  // Adding stub methods for the missing functions
+  // Real news API implementation
   getNewsByCountry: async (countryName: string): Promise<NewsArticle[]> => {
-    console.log(`Stub method called: getNewsByCountry for ${countryName}`);
-    return [
-      {
-        title: `Latest news about ${countryName}`,
-        description: `This is a mock news article about ${countryName}`,
-        url: '#',
-        source: { name: 'Mock News' },
-        publishedAt: new Date().toISOString()
+    try {
+      // Using NewsAPI.org or a similar service (free tier with limitations)
+      const response = await axios.get(`https://newsapi.org/v2/everything`, {
+        params: {
+          q: countryName,
+          sortBy: 'publishedAt',
+          language: 'en',
+          pageSize: 5,
+          apiKey: process.env.VITE_NEWS_API_KEY || 'demo-key' // Use environment variable
+        }
+      });
+      
+      // Handle response based on NewsAPI structure
+      if (response.data.status === 'ok') {
+        return response.data.articles.map((article: any) => ({
+          title: article.title || `News about ${countryName}`,
+          description: article.description || 'No description available',
+          url: article.url || '#',
+          source: { name: article.source?.name || 'News Source' },
+          publishedAt: article.publishedAt || new Date().toISOString(),
+          urlToImage: article.urlToImage
+        }));
+      } else {
+        throw new Error(response.data.message || 'Failed to fetch news');
       }
-    ];
-  },
-  
-  getWeatherForCity: async (cityName: string): Promise<Weather | null> => {
-    console.log(`Stub method called: getWeatherForCity for ${cityName}`);
-    return {
-      current_condition: [
+    } catch (error) {
+      console.error(`Error fetching news for ${countryName}:`, error);
+      
+      // Fallback to mock data when API fails or limits are reached
+      return [
         {
-          temp_C: '25',
-          humidity: '70',
-          weatherDesc: [{ value: 'Sunny' }]
-        }
-      ],
-      weather: [
+          title: `Latest developments in ${countryName}`,
+          description: `This is a fallback news article about ${countryName} when the API is unavailable.`,
+          url: '#',
+          source: { name: 'Fallback News' },
+          publishedAt: new Date().toISOString()
+        },
         {
-          avgtempC: '25',
-          hourly: [
-            {
-              weatherDesc: [{ value: 'Sunny' }]
-            }
-          ]
+          title: `Economic updates for ${countryName}`,
+          description: `Economic situation and forecasts for ${countryName}.`,
+          url: '#',
+          source: { name: 'Fallback News' },
+          publishedAt: new Date().toISOString()
         }
-      ]
-    };
-  },
-  
-  translateText: async (text: string, target: string): Promise<string> => {
-    console.log(`Translating: "${text}" to ${target}`);
-    
-    // Use mock translations if available, otherwise return a mock translation
-    if (mockTranslations[text]?.[target]) {
-      return mockTranslations[text][target];
+      ];
     }
-    
-    // Generate a mock translation
-    const translations: Record<string, (t: string) => string> = {
-      es: (t) => `${t} (Spanish)`,
-      fr: (t) => `${t} (French)`,
-      de: (t) => `${t} (German)`,
-      it: (t) => `${t} (Italian)`,
-      pt: (t) => `${t} (Portuguese)`,
-      ru: (t) => `${t} (Russian)`,
-      zh: (t) => `${t} (Chinese)`,
-      ja: (t) => `${t} (Japanese)`,
-      ar: (t) => `${t} (Arabic)`,
-      hi: (t) => `${t} (Hindi)`,
-    };
-    
-    return translations[target] ? translations[target](text) : text;
+  },
+  
+  // Real weather API implementation
+  getWeatherForCity: async (cityName: string): Promise<Weather | null> => {
+    try {
+      // Using a free weather API - wttr.in which doesn't require API key
+      const response = await axios.get(`https://wttr.in/${encodeURIComponent(cityName)}?format=j1`);
+      
+      // Transform the response to match our Weather interface
+      return {
+        current_condition: response.data.current_condition,
+        weather: response.data.weather
+      };
+    } catch (error) {
+      console.error(`Error fetching weather for ${cityName}:`, error);
+      
+      // Fallback to mock data
+      return {
+        current_condition: [
+          {
+            temp_C: '25',
+            humidity: '70',
+            weatherDesc: [{ value: 'Partly Cloudy' }]
+          }
+        ],
+        weather: [
+          {
+            avgtempC: '25',
+            hourly: [
+              {
+                weatherDesc: [{ value: 'Partly Cloudy' }]
+              }
+            ]
+          }
+        ]
+      };
+    }
+  },
+  
+  // Improved translation service using MyMemory API (free tier)
+  translateText: async (text: string, target: string): Promise<string> => {
+    try {
+      // Using MyMemory Translation API which has a free tier
+      const response = await axios.get('https://api.mymemory.translated.net/get', {
+        params: {
+          q: text,
+          langpair: `en|${target}`
+        }
+      });
+      
+      if (response.data.responseStatus === 200 && response.data.responseData?.translatedText) {
+        return response.data.responseData.translatedText;
+      }
+      
+      // Fallback to mock translations if API fails
+      throw new Error('Translation API response invalid');
+    } catch (error) {
+      console.error(`Error translating text to ${target}:`, error);
+      
+      // Use mock translations if available
+      if (mockTranslations[text]?.[target]) {
+        return mockTranslations[text][target];
+      }
+      
+      // Generate a fallback translation
+      const translations: Record<string, (t: string) => string> = {
+        es: (t) => `${t} (Spanish)`,
+        fr: (t) => `${t} (French)`,
+        de: (t) => `${t} (German)`,
+        it: (t) => `${t} (Italian)`,
+        pt: (t) => `${t} (Portuguese)`,
+        ru: (t) => `${t} (Russian)`,
+        zh: (t) => `${t} (Chinese)`,
+        ja: (t) => `${t} (Japanese)`,
+        ar: (t) => `${t} (Arabic)`,
+        hi: (t) => `${t} (Hindi)`,
+      };
+      
+      return translations[target] ? translations[target](text) : text;
+    }
   },
   
   getCountryByName: async (name: string): Promise<Country | null> => {

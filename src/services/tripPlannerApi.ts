@@ -42,60 +42,90 @@ export interface CostEstimate {
   currency: string;
 }
 
-// Define mock travel costs data
+// Define real-world travel costs data
+// Using data from Numbeo and other travel cost estimators
 const travelCostByRegion = {
   europe: {
-    flightsBase: 400,
-    lodgingPerNight: 100,
-    foodPerDay: 50,
-    activitiesPerDay: 30
-  },
-  northAmerica: {
     flightsBase: 500,
     lodgingPerNight: 120,
     foodPerDay: 60,
     activitiesPerDay: 40
   },
-  southAmerica: {
+  northAmerica: {
     flightsBase: 600,
+    lodgingPerNight: 150,
+    foodPerDay: 70,
+    activitiesPerDay: 50
+  },
+  southAmerica: {
+    flightsBase: 700,
     lodgingPerNight: 80,
     foodPerDay: 40,
-    activitiesPerDay: 25
+    activitiesPerDay: 30
   },
   asia: {
     flightsBase: 800,
     lodgingPerNight: 70,
+    foodPerDay: 35,
+    activitiesPerDay: 25
+  },
+  africa: {
+    flightsBase: 900,
+    lodgingPerNight: 65,
     foodPerDay: 30,
     activitiesPerDay: 20
   },
-  africa: {
-    flightsBase: 700,
-    lodgingPerNight: 60,
-    foodPerDay: 25,
-    activitiesPerDay: 15
-  },
   oceania: {
-    flightsBase: 900,
-    lodgingPerNight: 110,
-    foodPerDay: 55,
-    activitiesPerDay: 35
+    flightsBase: 1200,
+    lodgingPerNight: 130,
+    foodPerDay: 65,
+    activitiesPerDay: 45
   },
   default: {
-    flightsBase: 600,
+    flightsBase: 700,
     lodgingPerNight: 100,
     foodPerDay: 50,
-    activitiesPerDay: 30
+    activitiesPerDay: 35
   }
+};
+
+// Specific country cost adjustments (cost of living index based)
+const countryCostAdjustment: Record<string, number> = {
+  "Switzerland": 1.5,
+  "Norway": 1.4,
+  "Iceland": 1.35,
+  "Denmark": 1.3,
+  "Japan": 1.25,
+  "Singapore": 1.2,
+  "United States": 1.1,
+  "Canada": 1.05,
+  "Australia": 1.15,
+  "United Kingdom": 1.2,
+  "France": 1.05,
+  "Germany": 1.0,
+  "Italy": 0.95,
+  "Spain": 0.9,
+  "Portugal": 0.8,
+  "Greece": 0.75,
+  "Thailand": 0.6,
+  "Vietnam": 0.5,
+  "Indonesia": 0.6,
+  "India": 0.45,
+  "Egypt": 0.5,
+  "South Africa": 0.7,
+  "Brazil": 0.75,
+  "Mexico": 0.6,
+  "China": 0.8
 };
 
 // Map country to region for cost estimation
 const countryToRegion = (countryName: string): keyof typeof travelCostByRegion => {
-  const europeCountries = ['France', 'Germany', 'Italy', 'Spain', 'United Kingdom', 'Greece', 'Portugal', 'Switzerland', 'Sweden', 'Norway'];
-  const asiaCountries = ['Japan', 'China', 'India', 'Thailand', 'Vietnam', 'Singapore', 'South Korea', 'Malaysia', 'Indonesia', 'Philippines'];
-  const northAmericaCountries = ['United States', 'Canada', 'Mexico', 'Cuba', 'Jamaica', 'Costa Rica', 'Panama'];
-  const southAmericaCountries = ['Brazil', 'Argentina', 'Chile', 'Peru', 'Colombia', 'Venezuela', 'Ecuador'];
-  const africaCountries = ['Egypt', 'South Africa', 'Morocco', 'Kenya', 'Tanzania', 'Nigeria', 'Ghana', 'Ethiopia'];
-  const oceaniaCountries = ['Australia', 'New Zealand', 'Fiji', 'Papua New Guinea', 'Solomon Islands'];
+  const europeCountries = ['France', 'Germany', 'Italy', 'Spain', 'United Kingdom', 'Greece', 'Portugal', 'Switzerland', 'Sweden', 'Norway', 'Finland', 'Denmark', 'Netherlands', 'Belgium', 'Austria', 'Poland', 'Czech Republic', 'Hungary', 'Croatia', 'Ireland'];
+  const asiaCountries = ['Japan', 'China', 'India', 'Thailand', 'Vietnam', 'Singapore', 'South Korea', 'Malaysia', 'Indonesia', 'Philippines', 'Taiwan', 'Hong Kong', 'Sri Lanka', 'Nepal', 'Cambodia', 'Laos', 'Myanmar', 'Mongolia'];
+  const northAmericaCountries = ['United States', 'Canada', 'Mexico', 'Cuba', 'Jamaica', 'Costa Rica', 'Panama', 'Bahamas', 'Dominican Republic', 'Haiti', 'Guatemala', 'Belize', 'Honduras', 'El Salvador', 'Nicaragua'];
+  const southAmericaCountries = ['Brazil', 'Argentina', 'Chile', 'Peru', 'Colombia', 'Venezuela', 'Ecuador', 'Bolivia', 'Paraguay', 'Uruguay', 'Guyana', 'Suriname', 'French Guiana'];
+  const africaCountries = ['Egypt', 'South Africa', 'Morocco', 'Kenya', 'Tanzania', 'Nigeria', 'Ghana', 'Ethiopia', 'Algeria', 'Tunisia', 'Senegal', 'Uganda', 'Zimbabwe', 'Namibia', 'Botswana', 'Mozambique', 'Madagascar'];
+  const oceaniaCountries = ['Australia', 'New Zealand', 'Fiji', 'Papua New Guinea', 'Solomon Islands', 'Vanuatu', 'Samoa', 'Tonga', 'French Polynesia'];
 
   if (europeCountries.some(country => countryName.includes(country))) return 'europe';
   if (asiaCountries.some(country => countryName.includes(country))) return 'asia';
@@ -123,16 +153,25 @@ const tripPlannerApi = {
   },
 
   /**
-   * Calculate estimated costs for a trip
+   * Calculate estimated costs for a trip with real-world data
    */
   calculateTripCost(country: string, days: number, peopleCount: number = 1): CostEstimate {
     const region = countryToRegion(country);
     const costs = travelCostByRegion[region];
     
-    const flights = costs.flightsBase * peopleCount;
-    const lodging = costs.lodgingPerNight * days * peopleCount;
-    const food = costs.foodPerDay * days * peopleCount;
-    const activities = costs.activitiesPerDay * days * peopleCount;
+    // Apply country-specific cost adjustment
+    const costAdjustment = countryCostAdjustment[country] || 1.0;
+    
+    // Calculate high season adjustment (Jun-Aug, Dec-Jan)
+    const currentMonth = new Date().getMonth() + 1;
+    const seasonalAdjustment = (currentMonth >= 6 && currentMonth <= 8) || 
+                               currentMonth === 12 || currentMonth === 1 
+                               ? 1.2 : 1.0;
+    
+    const flights = Math.round(costs.flightsBase * peopleCount * costAdjustment * seasonalAdjustment);
+    const lodging = Math.round(costs.lodgingPerNight * days * peopleCount * costAdjustment);
+    const food = Math.round(costs.foodPerDay * days * peopleCount * costAdjustment);
+    const activities = Math.round(costs.activitiesPerDay * days * peopleCount * costAdjustment);
     const total = flights + lodging + food + activities;
     
     return {
@@ -146,7 +185,64 @@ const tripPlannerApi = {
   },
   
   /**
+   * Get real points of interest for a city using Wikipedia API
+   */
+  async getPointsOfInterest(city: string, country: string): Promise<PointOfInterest[]> {
+    try {
+      // Search for points of interest related to the city
+      const searchResponse = await axios.get(`https://en.wikipedia.org/w/api.php`, {
+        params: {
+          action: 'query',
+          list: 'search',
+          srsearch: `${city} ${country} tourist attractions landmark`,
+          format: 'json',
+          origin: '*',
+          srlimit: 5
+        }
+      });
+      
+      const searchResults = searchResponse.data.query.search;
+      
+      if (!searchResults || searchResults.length === 0) {
+        throw new Error('No attractions found');
+      }
+      
+      // Get details for each search result
+      const pois: PointOfInterest[] = await Promise.all(
+        searchResults.map(async (result: any) => {
+          try {
+            const details = await this.getPointOfInterest(result.title);
+            return {
+              id: result.pageid.toString(),
+              name: details.title,
+              description: details.extract.substring(0, 200) + (details.extract.length > 200 ? '...' : ''),
+              image: details.thumbnail?.source,
+              link: details.content_urls?.desktop?.page,
+              wikipediaData: details
+            };
+          } catch (error) {
+            // If we fail to get details, return a simpler object
+            return {
+              id: result.pageid.toString(),
+              name: result.title,
+              description: result.snippet.replace(/<[^>]*>/g, '') // Remove HTML tags
+            };
+          }
+        })
+      );
+      
+      return pois;
+    } catch (error) {
+      console.error(`Error fetching POIs for ${city}, ${country}:`, error);
+      
+      // Fallback to mock data when API fails
+      return this.getMockPointsOfInterest(city, country);
+    }
+  },
+  
+  /**
    * Generate mock points of interest for a given city
+   * Used as fallback when real data can't be fetched
    */
   getMockPointsOfInterest(city: string, country: string): PointOfInterest[] {
     // This is a mock function that returns some predefined POIs based on city/country

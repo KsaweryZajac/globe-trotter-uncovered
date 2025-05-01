@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
 import { GlobeIcon, HeartIcon, MapIcon, FlagIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import FlagQuizCard from '@/components/FlagQuiz/FlagQuizCard';
 import api from '@/services/api';
+import CountryOfTheDay from '@/components/CountryOfTheDay';
 
 const Index = () => {
   const [countries, setCountries] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch a set of random countries for the flag quiz
+  // Fetch a set of random countries
   useEffect(() => {
     const fetchCountries = async () => {
       try {
@@ -153,30 +153,9 @@ const Index = () => {
           </Card>
         </div>
 
+        {/* Country of the Day Section */}
         <div className="max-w-6xl mx-auto mt-12">
-          {!isLoading && countries.length > 0 && (
-            <Card className="w-full shadow-sm hover:shadow-md transition-shadow px-4 py-4">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <FlagIcon className="h-5 w-5" />
-                  Flag Quiz Preview
-                </CardTitle>
-                <CardDescription>
-                  Test your knowledge of world flags with our interactive quiz!
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <p className="mb-4 text-center">
-                  Try a sample of our flag quiz below or visit the{" "}
-                  <Link to="/flag-quiz" className="text-primary hover:underline">
-                    full Flag Quiz page
-                  </Link>{" "}
-                  for solo and multiplayer options.
-                </p>
-                <FlagQuizCard countries={countries} />
-              </CardContent>
-            </Card>
-          )}
+          <CountryOfTheDay />
         </div>
 
         <div className="text-center mt-16">
