@@ -8,6 +8,14 @@ interface TripGalleryProps {
   destinations: TripDestination[];
 }
 
+interface GalleryItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  searchTerm: string;
+  image?: string;
+}
+
 const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
   const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
 
@@ -19,9 +27,9 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
   };
 
   // Generate gallery items from destinations
-  const galleryItems = destinations.flatMap(dest => {
+  const galleryItems: GalleryItem[] = destinations.flatMap(dest => {
     // Create gallery item for each city
-    const cityItem = {
+    const cityItem: GalleryItem = {
       id: `city-${dest.city}`,
       title: dest.city,
       subtitle: dest.country.name.common,
@@ -29,7 +37,7 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
     };
     
     // Create gallery items for selected POIs
-    const poiItems = (dest.selectedPOIs || []).map(poi => ({
+    const poiItems: GalleryItem[] = (dest.selectedPOIs || []).map(poi => ({
       id: poi.id,
       title: poi.name,
       subtitle: `${dest.city}, ${dest.country.name.common}`,

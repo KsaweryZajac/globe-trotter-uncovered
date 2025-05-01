@@ -45,8 +45,8 @@ const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
       // Use position from country for city if we don't have specific coordinates
       // This is a simplification - in a real app, you'd use a geocoding service
       position: [
-        dest.country.latlng?.[0] || 0, 
-        dest.country.latlng?.[1] || 0
+        dest.country.latlng?.[0] ?? 0, 
+        dest.country.latlng?.[1] ?? 0
       ]
     };
     
@@ -99,7 +99,7 @@ const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
               center={[20, 0]} // Default center (will be adjusted by useEffect)
               zoom={2} // Default zoom (will be adjusted by useEffect)
               style={{ height: '100%', width: '100%' }}
-              whenCreated={(map) => { mapRef.current = map; }}
+              ref={(map: L.Map | null) => { mapRef.current = map; }}
             >
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
