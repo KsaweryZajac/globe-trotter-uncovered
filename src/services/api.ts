@@ -25,6 +25,33 @@ export interface Country {
   latlng?: number[];  // Add this for country coordinates
 }
 
+// Add missing types that were referenced in the error messages
+export interface NewsArticle {
+  title: string;
+  description: string;
+  url: string;
+  source: {
+    name: string;
+  };
+  publishedAt: string;
+  urlToImage?: string;
+}
+
+export interface Weather {
+  current_condition: Array<{
+    temp_C: string;
+    humidity: string;
+    weatherDesc: Array<{ value: string }>;
+  }>;
+  weather?: Array<{
+    date?: string;
+    avgtempC: string;
+    hourly: Array<{
+      weatherDesc: Array<{ value: string }>;
+    }>;
+  }>;
+}
+
 // API client
 const api = {
   // Get all countries
@@ -69,6 +96,34 @@ const api = {
       console.error(`Error fetching countries in region ${region}:`, error);
       return [];
     }
+  },
+  
+  // Adding stub methods for the missing functions
+  getNewsByCountry: async (countryName: string): Promise<NewsArticle[]> => {
+    console.log(`Stub method called: getNewsByCountry for ${countryName}`);
+    return [];
+  },
+  
+  getWeatherForCity: async (cityName: string): Promise<Weather | null> => {
+    console.log(`Stub method called: getWeatherForCity for ${cityName}`);
+    return null;
+  },
+  
+  translateText: async (text: string, target: string): Promise<string> => {
+    console.log(`Stub method called: translateText for ${text} to ${target}`);
+    return text;
+  },
+  
+  getCountryByName: async (name: string): Promise<Country | null> => {
+    return api.searchCountries(name).then(countries => countries[0] || null);
+  },
+  
+  getRandomCountry: async (): Promise<Country | null> => {
+    return api.getAllCountries().then(countries => {
+      if (countries.length === 0) return null;
+      const randomIndex = Math.floor(Math.random() * countries.length);
+      return countries[randomIndex];
+    });
   }
 };
 
