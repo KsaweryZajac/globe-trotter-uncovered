@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TripDestination } from './TripForm';
@@ -31,9 +31,29 @@ interface MapPoint {
   link?: string;
 }
 
-const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
-  const mapRef = useRef<L.Map | null>(null);
+// Create a MapController component to handle map interactions
+// This separates the map control logic from the rendering
+const MapController = ({ points }: { points: MapPoint[] }) => {
+  const map = useMap();
   
+  useEffect(() => {
+    if (points.length > 0) {
+      if (points.length === 1) {
+        // If only one point, center on it with a good zoom level
+        const point = points[0];
+        map.setView(point.position, 9);
+      } else {
+        // Create bounds that include all points
+        const bounds = L.latLngBounds(points.map(p => L.latLng(p.position[0], p.position[1])));
+        map.fitBounds(bounds, { padding: [30, 30] });
+      }
+    }
+  }, [map, points]);
+  
+  return null;
+};
+
+const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
   // Create map points from destinations
   const mapPoints: MapPoint[] = destinations.flatMap(dest => {
     // Add city as a map point
@@ -61,7 +81,7 @@ const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
         position: [
           poi.location?.lat || 0,
           poi.location?.lng || 0
-        ],
+        ] as [number, number],
         image: poi.image,
         description: poi.description,
         link: poi.link
@@ -69,23 +89,6 @@ const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
     
     return [cityPoint, ...poiPoints];
   });
-
-  // Fit map to markers when destinations change
-  useEffect(() => {
-    if (mapRef.current && mapPoints.length > 0) {
-      const map = mapRef.current;
-      
-      if (mapPoints.length === 1) {
-        // If only one point, center on it with a good zoom level
-        const point = mapPoints[0];
-        map.setView(point.position, 9);
-      } else {
-        // Create bounds that include all points
-        const bounds = L.latLngBounds(mapPoints.map(p => L.latLng(p.position[0], p.position[1])));
-        map.fitBounds(bounds, { padding: [30, 30] });
-      }
-    }
-  }, [mapPoints]);
 
   return (
     <Card className="mt-6">
@@ -96,11 +99,11 @@ const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
         {mapPoints.length > 0 ? (
           <div className="h-[400px] rounded-md overflow-hidden border">
             <MapContainer
-              center={[20, 0]} // Default center (will be adjusted by useEffect)
-              zoom={2} // Default zoom (will be adjusted by useEffect)
+              center={[20, 0]} // Default center
+              zoom={2} // Default zoom
               style={{ height: '100%', width: '100%' }}
-              ref={(map: L.Map | null) => { mapRef.current = map; }}
             >
+              <MapController points={mapPoints} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
