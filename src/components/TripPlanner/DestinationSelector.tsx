@@ -37,6 +37,11 @@ const DestinationSelector: React.FC<DestinationSelectorProps> = ({
 }) => {
   const [isLoadingPOIs, setIsLoadingPOIs] = useState(false);
   const [suggestedCities, setSuggestedCities] = useState<string[]>([]);
+  
+  // Sort countries alphabetically
+  const sortedCountries = [...countries].sort((a, b) => 
+    a.name.common.localeCompare(b.name.common)
+  );
 
   // Get suggested cities for selected country
   useEffect(() => {
@@ -125,7 +130,7 @@ const DestinationSelector: React.FC<DestinationSelectorProps> = ({
                   onChange={handleCountrySelect}
                   className="w-full px-3 py-2 mt-1 border rounded-md"
                 >
-                  {countries.map((country) => (
+                  {sortedCountries.map((country) => (
                     <option key={country.cca3} value={country.cca3}>
                       {country.name.common}
                     </option>

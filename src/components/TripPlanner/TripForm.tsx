@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, PlusIcon, SaveIcon, TrashIcon } from 'lucide-react';
+import { CalendarIcon, PlusIcon, SaveIcon, TrashIcon, HomeIcon } from 'lucide-react';
 import type { Country } from '@/services/api';
 import tripPlannerApi, { PointOfInterest } from '@/services/tripPlannerApi';
 import DestinationSelector from './DestinationSelector';
@@ -28,6 +28,7 @@ export interface Trip {
   title: string;
   startDate: string;
   endDate: string;
+  homeCountry?: string;
   destinations: TripDestination[];
 }
 
@@ -41,6 +42,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
   const [savedCities] = useLocalStorage<Record<string, string[]>>('savedCities', {});
 
   const [tripTitle, setTripTitle] = useState(initialTrip?.title || '');
+  const [homeCountry, setHomeCountry] = useState<string>(initialTrip?.homeCountry || '');
   const [startDate, setStartDate] = useState<Date | undefined>(
     initialTrip?.startDate ? new Date(initialTrip.startDate) : undefined
   );
@@ -51,10 +53,19 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
     initialTrip?.destinations || []
   );
 
+  // Sort countries alphabetically
+  const sortedCountries = [...countries].sort((a, b) => 
+    a.name.common.localeCompare(b.name.common)
+  );
+
   // Add a new destination
   const addDestination = () => {
+    // Use the most recent country if a destination exists, otherwise use first country
+    const lastDestination = destinations.length > 0 ? destinations[destinations.length - 1] : null;
+    const defaultCountry = lastDestination ? lastDestination.country : sortedCountries[0];
+
     setDestinations([...destinations, {
-      country: countries[0],
+      country: defaultCountry,
       city: '',
       pointsOfInterest: [],
       selectedPOIs: []
@@ -87,6 +98,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
       title: tripTitle,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
+      homeCountry: homeCountry,
       destinations
     };
 
@@ -96,6 +108,11 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
   // Get the trip duration in days
   const tripDuration = startDate && endDate ? 
     Math.max(1, differenceInDays(endDate, startDate) + 1) : 0;
+
+  // Handle home country change
+  const handleHomeCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setHomeCountry(e.target.value);
+  };
 
   return (
     <div className="space-y-6">
@@ -114,6 +131,29 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
               onChange={(e) => setTripTitle(e.target.value)}
               className="mt-1"
             />
+          </div>
+          
+          <div>
+            <Label htmlFor="home-country" className="flex items-center">
+              <HomeIcon className="h-4 w-4 mr-1" />
+              Your Home Country
+            </Label>
+            <select
+              id="home-country"
+              value={homeCountry}
+              onChange={handleHomeCountryChange}
+              className="w-full px-3 py-2 mt-1 border rounded-md"
+            >
+              <option value="">-- Select your home country --</option>
+              {sortedCountries.map((country) => (
+                <option key={country.cca3} value={country.name.common}>
+                  {country.name.common}
+                </option>
+              ))}
+            </select>
+            <p className="text-sm text-muted-foreground mt-1">
+              This helps us calculate flight costs and provide relevant travel information
+            </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -218,6 +258,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
             <TripCostEstimate 
               destinations={destinations} 
               tripDuration={tripDuration}
+              homeCountry={homeCountry}
             />
           )}
 
