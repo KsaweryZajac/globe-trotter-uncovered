@@ -52,7 +52,6 @@ const CountryOfTheDay: React.FC = () => {
       
       return newCountry;
     },
-    // Use onSettled instead of onError in the new version of react-query
     meta: {
       onError: (err: any) => {
         console.error("Error fetching country of the day:", err);
@@ -117,11 +116,11 @@ const CountryOfTheDay: React.FC = () => {
   }
 
   return (
-    <Card className="w-full shadow-md hover:shadow-lg transition-shadow">
+    <Card className="w-full shadow-md hover:shadow-lg transition-shadow glassmorphism">
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl">Country of the Day</CardTitle>
+            <CardTitle className="text-xl gradient-text">Country of the Day</CardTitle>
             <CardDescription>Discover something new about {country.name.common}</CardDescription>
           </div>
           <GlobeIcon className="h-6 w-6 text-primary" />
@@ -153,8 +152,8 @@ const CountryOfTheDay: React.FC = () => {
         </div>
       </CardContent>
       <CardFooter>
-        <Link to={`/search?query=${encodeURIComponent(country.name.common)}`} className="w-full">
-          <Button variant="default" className="w-full">
+        <Link to={`/search?country=${encodeURIComponent(country.name.common)}`} className="w-full">
+          <Button variant="default" className="w-full btn-shine">
             <MapPinIcon className="h-4 w-4 mr-2" />
             Explore {country.name.common}
           </Button>

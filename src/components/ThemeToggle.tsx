@@ -13,12 +13,24 @@ const ThemeToggle = () => {
       size="icon" 
       onClick={toggleTheme}
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} theme`}
-      className="rounded-full bg-gradient-to-br from-transparent to-primary/10 border-primary/20 hover:border-primary/40"
+      className="rounded-full bg-gradient-to-br from-transparent to-primary/5 border-primary/20 hover:border-primary/40"
     >
       {theme === 'light' ? (
-        <MoonIcon className="h-5 w-5 text-primary transition-all" />
+        <motion.div
+          initial={{ rotate: -30, opacity: 0 }}
+          animate={{ rotate: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <MoonIcon className="h-5 w-5 text-primary transition-all" />
+        </motion.div>
       ) : (
-        <SunIcon className="h-5 w-5 text-primary transition-all" />
+        <motion.div
+          initial={{ rotate: 30, opacity: 0 }}
+          animate={{ rotate: 0, opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <SunIcon className="h-5 w-5 text-primary transition-all" />
+        </motion.div>
       )}
     </Button>
   );
