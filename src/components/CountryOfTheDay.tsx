@@ -1,165 +1,130 @@
-
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GlobeIcon, MapPinIcon } from 'lucide-react';
+import { GlobeIcon } from 'lucide-react';
 import api, { Country } from '@/services/api';
-import { useToast } from '@/components/ui/use-toast';
 
-const CountryOfTheDay: React.FC = () => {
-  const { toast } = useToast();
-  
-  // Check if we need to update the country of the day
-  const shouldUpdateCountry = () => {
-    const lastUpdated = localStorage.getItem('countryOfTheDay_lastUpdated');
-    const currentDate = new Date().toDateString();
-    
-    return !lastUpdated || lastUpdated !== currentDate;
-  };
-  
-  // Get stored country or fetch a new one
-  const getInitialCountry = () => {
-    if (shouldUpdateCountry()) {
-      return null; // Will trigger fetch of new country
-    }
-    
-    const storedCountry = localStorage.getItem('countryOfTheDay');
-    return storedCountry ? JSON.parse(storedCountry) : null;
-  };
+interface CountryOfTheDayProps {
+  onExploreClick?: (countryName: string) => void;
+}
 
-  const [country, setCountry] = useState<Country | null>(getInitialCountry());
-  const [imageLoaded, setImageLoaded] = useState(false);
+const CountryOfTheDay: React.FC<CountryOfTheDayProps> = ({ onExploreClick }) => {
+  const [country, setCountry] = useState<Country | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch random country if needed
-  const { isLoading, error } = useQuery({
-    queryKey: ['countryOfTheDay'],
-    queryFn: async () => {
-      if (!shouldUpdateCountry() && country) {
-        return country; // Use cached country
-      }
-      
-      const newCountry = await api.getRandomCountry();
-      
-      // Store in localStorage
-      if (newCountry) {
-        localStorage.setItem('countryOfTheDay', JSON.stringify(newCountry));
-        localStorage.setItem('countryOfTheDay_lastUpdated', new Date().toDateString());
-        setCountry(newCountry);
-      }
-      
-      return newCountry;
-    },
-    meta: {
-      onError: (err: any) => {
-        console.error("Error fetching country of the day:", err);
-        toast({
-          title: "Error",
-          description: "Could not load country of the day",
-          variant: "destructive"
-        });
-      }
-    }
-  });
-
-  // Format population with commas
-  const formattedPopulation = country ? new Intl.NumberFormat().format(country.population) : '';
-
-  // Load image when country changes
   useEffect(() => {
-    if (country?.flags?.svg) {
-      setImageLoaded(false);
-      const img = new Image();
-      img.src = country.flags.svg;
-      img.onload = () => setImageLoaded(true);
-    }
-  }, [country]);
+    const getCountryOfTheDay = async () => {
+      // Use sessionStorage to keep the same country throughout the session
+      const storedCountry = sessionStorage.getItem('countryOfTheDay');
+      const storedDate = sessionStorage.getItem('countryOfTheDayDate');
+      const today = new Date().toDateString();
 
-  if (isLoading || !country) {
+      // Check if we have stored a country and if it's from today
+      if (storedCountry && storedDate === today) {
+        setCountry(JSON.parse(storedCountry));
+        setLoading(false);
+      } else {
+        try {
+          const randomCountry = await api.getRandomCountry();
+          
+          if (randomCountry) {
+            setCountry(randomCountry);
+            // Store in session storage
+            sessionStorage.setItem('countryOfTheDay', JSON.stringify(randomCountry));
+            sessionStorage.setItem('countryOfTheDayDate', today);
+          }
+        } catch (error) {
+          console.error('Error fetching country of the day:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    getCountryOfTheDay();
+  }, []);
+
+  // Handle the explore button click
+  const handleExploreClick = () => {
+    if (country && onExploreClick) {
+      onExploreClick(country.name.common);
+    }
+  };
+
+  if (loading) {
     return (
-      <Card className="w-full shadow-md">
-        <CardHeader>
-          <CardTitle>Country of the Day</CardTitle>
-          <CardDescription>Loading today's featured country...</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="w-full h-40" />
-          <div className="space-y-2">
-            <Skeleton className="w-1/2 h-4" />
-            <Skeleton className="w-2/3 h-4" />
-            <Skeleton className="w-1/3 h-4" />
+      <Card className="overflow-hidden shadow-md">
+        <CardContent className="p-0">
+          <div className="grid md:grid-cols-2 gap-0">
+            <div className="p-6">
+              <Skeleton className="h-10 w-3/4 mb-4" />
+              <Skeleton className="h-4 w-1/2 mb-2" />
+              <Skeleton className="h-4 w-2/3 mb-2" />
+              <Skeleton className="h-4 w-3/4 mb-4" />
+              <Skeleton className="h-9 w-32" />
+            </div>
+            <div className="bg-muted h-60 md:h-auto" />
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  if (error || !country) {
+  if (!country) {
     return (
-      <Card className="w-full shadow-md">
-        <CardHeader>
-          <CardTitle>Country of the Day</CardTitle>
-          <CardDescription>Could not load country information</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-destructive">Failed to load the country of the day. Please try again later.</p>
+      <Card className="overflow-hidden shadow-md">
+        <CardContent className="p-6 text-center">
+          <p className="text-muted-foreground">Unable to load country information.</p>
         </CardContent>
-        <CardFooter>
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            Retry
-          </Button>
-        </CardFooter>
       </Card>
     );
   }
 
   return (
-    <Card className="w-full shadow-md hover:shadow-lg transition-shadow glassmorphism">
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-xl gradient-text">Country of the Day</CardTitle>
-            <CardDescription>Discover something new about {country.name.common}</CardDescription>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <Card className="overflow-hidden shadow-lg">
+        <CardContent className="p-0">
+          <div className="grid md:grid-cols-2 gap-0">
+            <div className="p-6">
+              <h3 className="text-2xl font-bold mb-2">{country.name.common}</h3>
+              <p className="text-muted-foreground mb-1">Region: {country.region}</p>
+              <p className="text-muted-foreground mb-1">Capital: {country.capital?.[0] || 'N/A'}</p>
+              <p className="text-muted-foreground mb-4">Population: {country.population.toLocaleString()}</p>
+              
+              {onExploreClick ? (
+                <Button onClick={handleExploreClick} className="mt-2">
+                  <GlobeIcon className="mr-2 h-4 w-4" />
+                  Explore Country
+                </Button>
+              ) : (
+                <Link to="/search">
+                  <Button className="mt-2">
+                    <GlobeIcon className="mr-2 h-4 w-4" />
+                    Explore Countries
+                  </Button>
+                </Link>
+              )}
+            </div>
+            <div className="relative h-60 md:h-auto overflow-hidden bg-muted">
+              {country.flags?.svg && (
+                <img 
+                  src={country.flags.svg} 
+                  alt={country.flags.alt || `Flag of ${country.name.common}`}
+                  className="w-full h-full object-cover object-center"
+                />
+              )}
+            </div>
           </div>
-          <GlobeIcon className="h-6 w-6 text-primary" />
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="relative aspect-video w-full overflow-hidden rounded-md border">
-          {!imageLoaded && <Skeleton className="absolute inset-0" />}
-          <img
-            src={country.flags.svg}
-            alt={country.flags.alt || `Flag of ${country.name.common}`}
-            className="object-cover w-full h-full"
-            onLoad={() => setImageLoaded(true)}
-          />
-        </div>
-        
-        <div>
-          <h3 className="text-lg font-semibold">{country.name.common}</h3>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 mt-2 text-sm">
-            <div className="text-muted-foreground">Capital:</div>
-            <div>{country.capital?.[0] || 'N/A'}</div>
-            
-            <div className="text-muted-foreground">Region:</div>
-            <div>{country.region}</div>
-            
-            <div className="text-muted-foreground">Population:</div>
-            <div>{formattedPopulation}</div>
-          </div>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Link to={`/search?country=${encodeURIComponent(country.name.common)}`} className="w-full">
-          <Button variant="default" className="w-full btn-shine">
-            <MapPinIcon className="h-4 w-4 mr-2" />
-            Explore {country.name.common}
-          </Button>
-        </Link>
-      </CardFooter>
-    </Card>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };
 

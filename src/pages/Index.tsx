@@ -1,32 +1,35 @@
 
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { GlobeIcon, HeartIcon, MapIcon, FlagIcon, MenuIcon, Plane as PlaneIcon } from 'lucide-react';
-import ThemeToggle from '@/components/ThemeToggle';
+import { 
+  GlobeIcon, 
+  HeartIcon, 
+  MapIcon, 
+  FlagIcon, 
+  SearchIcon,
+  Utensils as UtensilsIcon,
+  Users as UsersIcon,
+  History as HistoryIcon
+} from 'lucide-react';
+import Header from '@/components/Header';
 import CountryOfTheDay from '@/components/CountryOfTheDay';
-import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger } from '@/components/ui/navigation-menu';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
 const Index = () => {
-  const [scrolled, setScrolled] = useState(false);
+  const navigate = useNavigate();
   
-  // Add scroll effect for header
-  useEffect(() => {
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 50;
-      if (isScrolled !== scrolled) {
-        setScrolled(isScrolled);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, [scrolled]);
+  const handleExploreCountry = (countryName: string) => {
+    // Store the country name in sessionStorage to be used in the Search page
+    sessionStorage.setItem('preselectedCountry', countryName);
+    navigate('/search');
+  };
+
+  // Pass the handler to the CountryOfTheDay component
+  const countryOfTheDayProps = {
+    onExploreClick: handleExploreCountry
+  };
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -45,113 +48,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
-      {/* Header */}
-      <header className={`sticky top-0 z-10 modern-nav transition-all duration-300 ${scrolled ? 'py-2 shadow-md' : 'py-4'}`}>
-        <div className="container flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="animate-float text-3xl">🌍</span>
-            <h1 className={`font-bold transition-all duration-300 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent ${scrolled ? 'text-xl' : 'text-2xl'}`}>
-              Culture Explorer
-            </h1>
-          </div>
-          
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-4">
-            <NavigationMenu>
-              <NavigationMenuList>
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="bg-background/50 dark:bg-background/20">Explore</NavigationMenuTrigger>
-                  <NavigationMenuContent>
-                    <ul className="grid grid-cols-2 gap-3 p-4 w-[400px]">
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <Link to="/search" className="flex p-3 items-start gap-3 rounded-md hover:bg-accent/20 transition-colors">
-                            <GlobeIcon className="h-5 w-5 text-primary" />
-                            <div>
-                              <div className="font-medium">Search Countries</div>
-                              <p className="text-sm text-muted-foreground">Explore details about any country</p>
-                            </div>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <Link to="/favorites" className="flex p-3 items-start gap-3 rounded-md hover:bg-accent/20 transition-colors">
-                            <HeartIcon className="h-5 w-5 text-primary" />
-                            <div>
-                              <div className="font-medium">Favorites</div>
-                              <p className="text-sm text-muted-foreground">Your saved countries</p>
-                            </div>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <Link to="/trip-planner" className="flex p-3 items-start gap-3 rounded-md hover:bg-accent/20 transition-colors">
-                            <MapIcon className="h-5 w-5 text-primary" />
-                            <div>
-                              <div className="font-medium">Trip Planner</div>
-                              <p className="text-sm text-muted-foreground">Plan your next adventure</p>
-                            </div>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                      <li>
-                        <NavigationMenuLink asChild>
-                          <Link to="/flag-quiz" className="flex p-3 items-start gap-3 rounded-md hover:bg-accent/20 transition-colors">
-                            <FlagIcon className="h-5 w-5 text-primary" />
-                            <div>
-                              <div className="font-medium">Flag Quiz</div>
-                              <p className="text-sm text-muted-foreground">Test your knowledge</p>
-                            </div>
-                          </Link>
-                        </NavigationMenuLink>
-                      </li>
-                    </ul>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-            <ThemeToggle />
-          </div>
-          
-          {/* Mobile Menu */}
-          <div className="md:hidden flex items-center gap-2">
-            <ThemeToggle />
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <MenuIcon className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent>
-                <div className="flex flex-col gap-4 py-4">
-                  <Link to="/" className="flex items-center gap-2 pb-4 border-b">
-                    <span className="text-2xl">🌍</span>
-                    <h2 className="text-lg font-semibold">Culture Explorer</h2>
-                  </Link>
-                  <Link to="/search" className="flex items-center gap-3 py-2">
-                    <GlobeIcon className="h-5 w-5 text-primary" />
-                    <span>Search Countries</span>
-                  </Link>
-                  <Link to="/favorites" className="flex items-center gap-3 py-2">
-                    <HeartIcon className="h-5 w-5 text-primary" />
-                    <span>Favorites</span>
-                  </Link>
-                  <Link to="/trip-planner" className="flex items-center gap-3 py-2">
-                    <MapIcon className="h-5 w-5 text-primary" />
-                    <span>Trip Planner</span>
-                  </Link>
-                  <Link to="/flag-quiz" className="flex items-center gap-3 py-2">
-                    <FlagIcon className="h-5 w-5 text-primary" />
-                    <span>Flag Quiz</span>
-                  </Link>
-                </div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        </div>
-      </header>
+      <Header />
 
       {/* Hero Section */}
       <section className="hero-container">
@@ -173,14 +70,14 @@ const Index = () => {
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/search">
                 <Button size="lg" className="btn-shine gradient-primary text-white">
-                  <GlobeIcon className="h-5 w-5 mr-2" />
-                  Start Exploring
+                  <SearchIcon className="h-5 w-5 mr-2" />
+                  Search Countries
                 </Button>
               </Link>
-              <Link to="/flag-quiz">
+              <Link to="/trip-planner">
                 <Button size="lg" variant="outline" className="border-primary/30 hover:border-primary/60">
-                  <FlagIcon className="h-5 w-5 mr-2" />
-                  Test Your Knowledge
+                  <MapIcon className="h-5 w-5 mr-2" />
+                  Plan Your Trip
                 </Button>
               </Link>
             </div>
@@ -207,23 +104,23 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             <motion.div variants={cardVariants}>
-              <Card className="h-full modern-card hover:border-primary/30">
+              <Card className="h-full modern-card hover:border-primary/30 flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <GlobeIcon className="h-5 w-5 text-primary" />
+                    <SearchIcon className="h-5 w-5 text-primary" />
                     Search Countries
                   </CardTitle>
                   <CardDescription>
                     Explore countries around the world
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <p className="text-muted-foreground">
                     Search for any country by name or discover a random one. 
                     View detailed information and get interesting translations.
                   </p>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="mt-auto">
                   <Link to="/search" className="w-full">
                     <Button className="w-full btn-shine">
                       Start Searching
@@ -234,7 +131,7 @@ const Index = () => {
             </motion.div>
             
             <motion.div variants={cardVariants}>
-              <Card className="h-full modern-card hover:border-primary/30">
+              <Card className="h-full modern-card hover:border-primary/30 flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <HeartIcon className="h-5 w-5 text-primary" />
@@ -244,13 +141,13 @@ const Index = () => {
                     Access your favorite countries
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <p className="text-muted-foreground">
                     View and manage your favorite countries. Quickly access detailed information 
                     about the places that interest you most.
                   </p>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="mt-auto">
                   <Link to="/favorites" className="w-full">
                     <Button className="w-full" variant="outline">
                       View Favorites
@@ -261,7 +158,7 @@ const Index = () => {
             </motion.div>
             
             <motion.div variants={cardVariants}>
-              <Card className="h-full modern-card hover:border-primary/30">
+              <Card className="h-full modern-card hover:border-primary/30 flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <MapIcon className="h-5 w-5 text-primary" />
@@ -271,13 +168,13 @@ const Index = () => {
                     Plan your next adventure
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <p className="text-muted-foreground">
                     Create detailed travel itineraries, explore destinations, 
                     check weather forecasts, and estimate costs for your trips.
                   </p>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="mt-auto">
                   <Link to="/trip-planner" className="w-full">
                     <Button className="w-full" variant="outline">
                       Plan a Trip
@@ -288,7 +185,7 @@ const Index = () => {
             </motion.div>
             
             <motion.div variants={cardVariants}>
-              <Card className="h-full modern-card hover:border-primary/30">
+              <Card className="h-full modern-card hover:border-primary/30 flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FlagIcon className="h-5 w-5 text-primary" />
@@ -298,13 +195,13 @@ const Index = () => {
                     Test your flag knowledge
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <p className="text-muted-foreground">
-                    Play solo or multiplayer flag quizzes. Challenge friends with 
-                    our interactive multiplayer mode and compete for the high score.
+                    Play our interactive flag quiz and challenge yourself to recognize
+                    flags from around the world. Track your high scores and improve your knowledge.
                   </p>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="mt-auto">
                   <Link to="/flag-quiz" className="w-full">
                     <Button className="w-full" variant="outline">
                       Play Quiz
@@ -330,7 +227,7 @@ const Index = () => {
               Discover a new country every day and expand your knowledge of our diverse world.
             </p>
           </div>
-          <CountryOfTheDay />
+          <CountryOfTheDay onExploreClick={handleExploreCountry} />
         </motion.div>
 
         <motion.div 
@@ -349,8 +246,14 @@ const Index = () => {
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/search">
               <Button size="lg" className="gap-2 btn-shine">
-                <GlobeIcon className="h-5 w-5" />
+                <SearchIcon className="h-5 w-5" />
                 Search Countries
+              </Button>
+            </Link>
+            <Link to="/trip-planner">
+              <Button size="lg" variant="outline" className="gap-2">
+                <MapIcon className="h-5 w-5" />
+                Plan a Trip
               </Button>
             </Link>
             <Link to="/favorites">
