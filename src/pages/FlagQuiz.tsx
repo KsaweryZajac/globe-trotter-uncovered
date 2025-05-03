@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +23,7 @@ type LeaderboardEntry = {
 const FlagQuiz = () => {
   const { toast } = useToast();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [countries, setCountries] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('solo');
@@ -114,6 +115,20 @@ const FlagQuiz = () => {
     setMultiplayerMode('create');
     setLobbyCode('');
     setJoinLobbyCode('');
+  };
+
+  // Handle Go to Multiplayer button click
+  const handleGoToMultiplayer = () => {
+    if (!playerName) {
+      toast({
+        title: "Enter Your Name",
+        description: "Please enter your name before starting multiplayer",
+      });
+      return;
+    }
+    
+    setActiveTab('multiplayer');
+    setMultiplayerMode('play');
   };
 
   return (
@@ -254,10 +269,7 @@ const FlagQuiz = () => {
                           </p>
                           <Button 
                             className="w-full" 
-                            onClick={() => {
-                              setActiveTab('multiplayer');
-                              setMultiplayerMode('create');
-                            }}
+                            onClick={handleGoToMultiplayer}
                           >
                             Go to Multiplayer
                           </Button>
