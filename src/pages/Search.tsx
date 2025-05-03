@@ -1,5 +1,4 @@
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import api, { Country, NewsArticle, Weather } from '@/services/api';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -7,7 +6,7 @@ import SearchBar from '@/components/SearchBar';
 import CountryCard from '@/components/CountryCard';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { GlobeIcon, HeartIcon, ShuffleIcon } from 'lucide-react';
 
 const Search = () => {
@@ -30,7 +29,18 @@ const Search = () => {
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [translationError, setTranslationError] = useState<string | null>(null);
 
+  const location = useLocation();
   const { toast } = useToast();
+
+  // Check for country parameter in URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const countryParam = params.get('country');
+    
+    if (countryParam) {
+      handleSearch(countryParam);
+    }
+  }, [location]);
 
   // Check if a country is in favorites
   const isCountryInFavorites = (country: Country | null) => {
@@ -195,20 +205,20 @@ const Search = () => {
   };
 
   return (
-    <div className="min-h-screen pb-8">
+    <div className="min-h-screen pb-8 bg-gradient-to-b from-background to-background/90">
       {/* Header */}
       <header className="sticky top-0 z-10 backdrop-blur-lg bg-background/90 border-b border-border">
         <div className="container py-4 flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <span className="animate-float">🌍</span>
-              <h1 className="text-2xl font-bold">Culture Explorer</h1>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Culture Explorer</h1>
             </Link>
           </div>
           <div className="flex items-center gap-3">
             <Link to="/favorites">
-              <Button variant="outline" className="flex items-center gap-2">
-                <HeartIcon size={16} />
+              <Button variant="outline" className="flex items-center gap-2 border-primary/20 hover:border-primary">
+                <HeartIcon size={16} className="text-primary" />
                 <span className="hidden sm:inline">Favorites</span>
               </Button>
             </Link>
@@ -222,7 +232,7 @@ const Search = () => {
         {/* Search Section */}
         <section className="mb-8">
           <div className="flex flex-col items-center text-center mb-6">
-            <h2 className="text-3xl font-bold mb-2">Search Countries</h2>
+            <h2 className="text-3xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Search Countries</h2>
             <p className="text-muted-foreground max-w-2xl">
               Search for a country to discover its details, latest news, and weather information.
             </p>
@@ -234,7 +244,7 @@ const Search = () => {
               variant="secondary"
               onClick={fetchRandomCountry}
               disabled={isLoading}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto bg-secondary hover:bg-secondary/80"
             >
               <ShuffleIcon className="h-4 w-4 mr-2" />
               Random Country
@@ -284,7 +294,7 @@ const Search = () => {
 
       {/* Footer */}
       <footer className="container mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Culture Explorer - A school project</p>
+        <p>&copy; {new Date().getFullYear()} Culture Explorer - Zajac Ksawery</p>
       </footer>
     </div>
   );

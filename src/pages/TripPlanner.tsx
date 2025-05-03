@@ -22,7 +22,7 @@ const TripPlanner: React.FC = () => {
   const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
   const { toast } = useToast();
 
-  // Fetch all countries for destination selection
+  // Fetch all countries for destination selection, sorted alphabetically
   const { data: countries, isLoading } = useQuery({
     queryKey: ['countries'],
     queryFn: async () => {
@@ -30,7 +30,8 @@ const TripPlanner: React.FC = () => {
       if (!response.ok) {
         throw new Error('Failed to fetch countries');
       }
-      return response.json();
+      const data = await response.json();
+      return data.sort((a: any, b: any) => a.name.common.localeCompare(b.name.common));
     }
   });
 
@@ -98,7 +99,7 @@ const TripPlanner: React.FC = () => {
             </Link>
             <div className="h-5 w-px bg-border mx-2" />
             <div className="flex items-center">
-              <MapIcon className="h-5 w-5 mr-2" />
+              <MapIcon className="h-5 w-5 mr-2 text-primary" />
               <h1 className="text-2xl font-bold">Trip Planner</h1>
             </div>
           </div>
@@ -114,7 +115,7 @@ const TripPlanner: React.FC = () => {
           className="space-y-4"
         >
           <div className="flex justify-between items-center">
-            <TabsList>
+            <TabsList className="bg-muted/50">
               <TabsTrigger value="plan">Plan Trip</TabsTrigger>
               <TabsTrigger value="saved">Saved Trips</TabsTrigger>
               <TabsTrigger value="itinerary" disabled={!currentTrip}>Itinerary</TabsTrigger>
@@ -192,7 +193,7 @@ const TripPlanner: React.FC = () => {
 
       {/* Footer */}
       <footer className="container mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Culture Explorer - Trip Planner Module</p>
+        <p>&copy; {new Date().getFullYear()} Culture Explorer - Zajac Ksawery</p>
       </footer>
     </div>
   );
