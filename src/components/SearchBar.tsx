@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search as SearchIcon } from "lucide-react";
+import { Search } from "lucide-react";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -34,7 +34,7 @@ const SearchBar = ({ onSearch, isLoading }: SearchBarProps) => {
         disabled={!query.trim() || isLoading}
         className="flex-shrink-0"
       >
-        <SearchIcon className="h-4 w-4 mr-2" />
+        <Search className="h-4 w-4 mr-2" />
         {isLoading ? 'Searching...' : 'Search'}
       </Button>
     </form>

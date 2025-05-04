@@ -1,6 +1,7 @@
+
 import { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Country } from '@/services/api';
+import { Country, NewsArticle, Weather } from '@/services/api';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';

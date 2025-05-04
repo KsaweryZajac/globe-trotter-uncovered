@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { Country } from '@/services/api';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Map as MapIcon, Globe, Users, CircleDollar, Languages, Image, Link } from 'lucide-react';
+import { Map as MapIcon, Globe, Users, CircleDollarSign, Languages, Image, Link } from 'lucide-react';
 
 interface CountryCardProps {
   country: Country | null;
@@ -121,7 +120,7 @@ const CountryCard: React.FC<CountryCardProps> = ({
             <span className="text-sm text-muted-foreground">Population: {country.population.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2">
-            <CircleDollar className="h-4 w-4 text-muted-foreground" />
+            <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
               Currency: {Object.values(country.currencies || {})
                 .map((currency) => currency.name)
