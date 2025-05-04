@@ -1,72 +1,45 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Country } from '@/services/api';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GlobeIcon } from 'lucide-react';
-import api, { Country } from '@/services/api';
+import { MapPinIcon, GlobeIcon, PlaneIcon } from 'lucide-react';
 
-const CountryOfTheDay: React.FC = () => {
-  const [country, setCountry] = useState<Country | null>(null);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+interface CountryOfTheDayProps {
+  country: Country | null;
+  loading: boolean;
+  error: string | null;
+  onExploreClick: (countryName: string) => void;
+}
 
-  useEffect(() => {
-    const getCountryOfTheDay = async () => {
-      // Use sessionStorage to keep the same country throughout the session
-      const storedCountry = sessionStorage.getItem('countryOfTheDay');
-      const storedDate = sessionStorage.getItem('countryOfTheDayDate');
-      const today = new Date().toDateString();
-
-      // Check if we have stored a country and if it's from today
-      if (storedCountry && storedDate === today) {
-        setCountry(JSON.parse(storedCountry));
-        setLoading(false);
-      } else {
-        try {
-          const randomCountry = await api.getRandomCountry();
-          
-          if (randomCountry) {
-            setCountry(randomCountry);
-            // Store in session storage
-            sessionStorage.setItem('countryOfTheDay', JSON.stringify(randomCountry));
-            sessionStorage.setItem('countryOfTheDayDate', today);
-          }
-        } catch (error) {
-          console.error('Error fetching country of the day:', error);
-        } finally {
-          setLoading(false);
-        }
-      }
-    };
-
-    getCountryOfTheDay();
-  }, []);
-
-  // Handle the explore button click
-  const handleExploreClick = () => {
-    if (country) {
-      // Store the country name in sessionStorage for the Search page to use
-      sessionStorage.setItem('preselectedCountry', country.name.common);
-      navigate('/search');
-    }
-  };
-
+const CountryOfTheDay: React.FC<CountryOfTheDayProps> = ({ country, loading, error, onExploreClick }) => {
   if (loading) {
     return (
-      <Card className="overflow-hidden shadow-md">
-        <CardContent className="p-0">
-          <div className="grid md:grid-cols-2 gap-0">
-            <div className="p-6">
-              <Skeleton className="h-10 w-3/4 mb-4" />
-              <Skeleton className="h-4 w-1/2 mb-2" />
-              <Skeleton className="h-4 w-2/3 mb-2" />
-              <Skeleton className="h-4 w-3/4 mb-4" />
-              <Skeleton className="h-9 w-32" />
-            </div>
-            <div className="bg-muted h-60 md:h-auto" />
-          </div>
+      <Card className="shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <CardTitle><Skeleton className="h-5 w-40" /></CardTitle>
+          <CardDescription><Skeleton className="h-4 w-24" /></CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Skeleton className="h-4 w-full mb-2" />
+          <Skeleton className="h-4 w-5/6 mb-2" />
+          <Skeleton className="h-4 w-2/3" />
+        </CardContent>
+        <CardFooter>
+          <Skeleton className="h-10 w-20" />
+        </CardFooter>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">Failed to load country of the day.</p>
         </CardContent>
       </Card>
     );
@@ -74,47 +47,48 @@ const CountryOfTheDay: React.FC = () => {
 
   if (!country) {
     return (
-      <Card className="overflow-hidden shadow-md">
-        <CardContent className="p-6 text-center">
-          <p className="text-muted-foreground">Unable to load country information.</p>
+      <Card className="shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <CardTitle>No Country Today</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground">No country of the day available.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      <Card className="overflow-hidden shadow-lg">
-        <CardContent className="p-0">
-          <div className="grid md:grid-cols-2 gap-0">
-            <div className="p-6">
-              <h3 className="text-2xl font-bold mb-2">{country.name.common}</h3>
-              <p className="text-muted-foreground mb-1">Region: {country.region}</p>
-              <p className="text-muted-foreground mb-1">Capital: {country.capital?.[0] || 'N/A'}</p>
-              <p className="text-muted-foreground mb-4">Population: {country.population.toLocaleString()}</p>
-              
-              <Button onClick={handleExploreClick} className="mt-2">
-                <GlobeIcon className="mr-2 h-4 w-4" />
-                Explore Country
-              </Button>
-            </div>
-            <div className="relative h-60 md:h-auto overflow-hidden bg-muted">
-              {country.flags?.svg && (
-                <img 
-                  src={country.flags.svg} 
-                  alt={country.flags.alt || `Flag of ${country.name.common}`}
-                  className="w-full h-full object-cover object-center"
-                />
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+    <Card className="shadow-md hover:shadow-lg transition-shadow">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <GlobeIcon className="h-5 w-5 text-primary" />
+          Country of the Day
+        </CardTitle>
+        <CardDescription>Discover a new country each day</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <h3 className="text-xl font-semibold">{country.name.common}</h3>
+          <p className="text-muted-foreground">{country.name.official}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">{country.capital?.[0] || 'N/A'}, {country.region}</span>
+        </div>
+        <img
+          src={country.flags.svg}
+          alt={`Flag of ${country.name.common}`}
+          className="w-full rounded-md aspect-video object-cover"
+        />
+      </CardContent>
+      <CardFooter>
+        <Button onClick={() => onExploreClick(country.name.common)}>
+          <PlaneIcon className="h-4 w-4 mr-2" />
+          Explore {country.name.common}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 };
 

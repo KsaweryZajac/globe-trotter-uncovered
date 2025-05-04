@@ -4,7 +4,7 @@ import { Country, NewsArticle, Weather } from "@/services/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { HeartIcon, InfoIcon, GlobeIcon, MapPinIcon } from "lucide-react";
+import { HeartIcon, InfoIcon, GlobeIcon, MapPinIcon, Map } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
@@ -131,7 +131,7 @@ const CountryCard = ({
                 </div>
               )}
               
-              {country.coatOfArms?.svg && (
+              {country.coatOfArms && country.coatOfArms.svg && (
                 <div className="mt-3">
                   <p className="text-xs text-muted-foreground mb-1">Coat of Arms</p>
                   <div className="h-24 flex items-center justify-center border rounded-md p-2">
@@ -211,7 +211,7 @@ const CountryCard = ({
               </motion.div>
 
               <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                {country.maps?.googleMaps && (
+                {country.maps && country.maps.googleMaps && (
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <a href={country.maps.googleMaps} target="_blank" rel="noopener noreferrer">
                       <MapPinIcon className="h-4 w-4 mr-2" />
@@ -220,10 +220,10 @@ const CountryCard = ({
                   </Button>
                 )}
                 
-                {country.maps?.openStreetMaps && (
+                {country.maps && country.maps.openStreetMaps && (
                   <Button variant="outline" size="sm" className="flex-1" asChild>
                     <a href={country.maps.openStreetMaps} target="_blank" rel="noopener noreferrer">
-                      <MapIcon className="h-4 w-4 mr-2" />
+                      <Map className="h-4 w-4 mr-2" />
                       OpenStreetMap
                     </a>
                   </Button>
@@ -238,8 +238,6 @@ const CountryCard = ({
               </div>
             </div>
           </div>
-
-          {/* Potential expansion section could go here for additional data */}
         </CardContent>
       </Card>
     </motion.div>

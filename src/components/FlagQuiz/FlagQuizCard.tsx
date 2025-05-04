@@ -1,246 +1,195 @@
-
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { FlagIcon, CheckIcon, XIcon, RefreshCwIcon } from 'lucide-react';
-import { useToast } from "@/hooks/use-toast";
-import type { Country } from '@/services/api';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Progress } from '@/components/ui/progress';
+import { ArrowRightIcon, FlagIcon, XIcon, CheckIcon, HeartIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getFlagQuiz } from '@/services/flagQuizApi';
+import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
 
-interface FlagQuizProps {
-  countries: Country[];
-  onGameComplete?: (score: number, total: number) => void;
+export interface FlagQuizProps {
+  onBackToMenu: () => void;
+  onScoreSubmit: (score: number) => void;
 }
 
-const FlagQuizCard: React.FC<FlagQuizProps> = ({ countries, onGameComplete }) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [quizCountries, setQuizCountries] = useState<Country[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [userAnswer, setUserAnswer] = useState('');
-  const [result, setResult] = useState<'correct' | 'incorrect' | null>(null);
+const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) => {
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
-  const [totalAnswered, setTotalAnswered] = useState(0);
-  const [optionsCount, setOptionsCount] = useState(4); // Default 4 options
-  const [quizOptions, setQuizOptions] = useState<Country[]>([]);
-  
+  const [loading, setLoading] = useState(true);
+  const [quizComplete, setQuizComplete] = useState(false);
+  const [streak, setStreak] = useState(0);
+  const [flagLoaded, setFlagLoaded] = useState(false);
   const { toast } = useToast();
 
-  // Initialize the quiz
   useEffect(() => {
-    if (countries.length > 0) {
-      initializeQuiz();
-    }
-  }, [countries]);
+    loadQuestions();
+  }, []);
 
-  // Generate random options when current index changes
-  useEffect(() => {
-    if (quizCountries.length > 0) {
-      generateOptions();
+  const loadQuestions = async () => {
+    setLoading(true);
+    try {
+      const quizQuestions = await getFlagQuiz();
+      setQuestions(quizQuestions);
+    } catch (error) {
+      console.error("Failed to load questions:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load questions. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [currentIndex, quizCountries, optionsCount]);
-
-  const initializeQuiz = () => {
-    setIsLoading(true);
-    
-    // Get a random subset of countries for the quiz
-    const shuffled = [...countries].sort(() => 0.5 - Math.random());
-    setQuizCountries(shuffled.slice(0, 10)); // 10 questions per quiz
-    setCurrentIndex(0);
-    setScore(0);
-    setTotalAnswered(0);
-    setUserAnswer('');
-    setResult(null);
-    
-    setIsLoading(false);
   };
 
-  const generateOptions = () => {
-    if (!quizCountries[currentIndex]) return;
-    
-    // Current correct country
-    const correctCountry = quizCountries[currentIndex];
-    
-    // Get random wrong options (don't include the correct answer)
-    const wrongOptions = [...countries]
-      .filter(c => c.cca3 !== correctCountry.cca3)
-      .sort(() => 0.5 - Math.random())
-      .slice(0, optionsCount - 1);
-    
-    // Combine and shuffle all options
-    const allOptions = [correctCountry, ...wrongOptions].sort(() => 0.5 - Math.random());
-    
-    setQuizOptions(allOptions);
-  };
+  const handleAnswer = (option: string) => {
+    setSelectedOption(option);
+    const correct = option === questions[currentQuestionIndex].correctAnswer;
+    setIsCorrect(correct);
 
-  const handleOptionSelect = (country: Country) => {
-    const correctCountry = quizCountries[currentIndex];
-    const isCorrect = country.cca3 === correctCountry.cca3;
-    
-    setResult(isCorrect ? 'correct' : 'incorrect');
-    setUserAnswer(country.name.common);
-    
-    if (isCorrect) {
-      setScore(prev => prev + 1);
+    if (correct) {
+      setScore(score + 1);
+      setStreak(streak + 1);
       toast({
         title: "Correct!",
-        description: `${country.name.common} is the right answer!`,
+        description: "+1 point",
       });
     } else {
+      setStreak(0);
       toast({
         title: "Incorrect",
-        description: `The correct answer was ${correctCountry.name.common}`,
-        variant: "destructive"
+        description: `The correct answer was ${questions[currentQuestionIndex].correctAnswer}`,
+        variant: "destructive",
       });
     }
-    
-    setTotalAnswered(prev => prev + 1);
   };
 
-  const handleNextQuestion = () => {
-    if (currentIndex < quizCountries.length - 1) {
-      setCurrentIndex(prev => prev + 1);
-      setUserAnswer('');
-      setResult(null);
+  const nextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+      setSelectedOption(null);
+      setIsCorrect(null);
+      setFlagLoaded(false);
     } else {
-      // End of quiz
-      toast({
-        title: "Quiz completed!",
-        description: `Your final score: ${score + (result === 'correct' ? 1 : 0)} out of ${quizCountries.length}`,
-      });
-      
-      // Call onGameComplete if provided
-      if (onGameComplete) {
-        onGameComplete(score + (result === 'correct' ? 1 : 0), quizCountries.length);
-      }
-      
-      // Reset for a new quiz
-      initializeQuiz();
+      setQuizComplete(true);
+      onScoreSubmit(score);
     }
   };
 
-  const handleOptionCountChange = (count: number) => {
-    setOptionsCount(count);
-    toast({
-      title: "Options updated",
-      description: `Quiz now has ${count} options per question`,
-    });
-    
-    // Regenerate options
-    generateOptions();
+  const resetQuiz = () => {
+    setCurrentQuestionIndex(0);
+    setSelectedOption(null);
+    setIsCorrect(null);
+    setScore(0);
+    setQuizComplete(false);
+    setStreak(0);
+    loadQuestions();
   };
 
-  if (isLoading || !quizCountries.length) {
-    return (
-      <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FlagIcon className="h-5 w-5" />
-            Flag Quiz
-          </CardTitle>
-          <CardDescription>Loading quiz...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-center items-center h-48">
-            <p>Loading questions...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleImageLoad = () => {
+    setFlagLoaded(true);
+  };
 
-  const currentCountry = quizCountries[currentIndex];
-  const isQuizEnded = totalAnswered === quizCountries.length;
+  const currentQuestion = questions[currentQuestionIndex];
+
+  const cardVariants = {
+    hidden: { opacity: 0, x: -50 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.5 } },
+    exit: { opacity: 0, x: 50, transition: { duration: 0.3 } },
+  };
+
+  const buttonVariants = {
+    hidden: { opacity: 0 },
+    visible: { opacity: 1, transition: { delay: 0.5, duration: 0.3 } },
+  };
 
   return (
-    <Card className="w-full shadow-sm hover:shadow-md transition-shadow">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FlagIcon className="h-5 w-5" />
-          Flag Quiz
-        </CardTitle>
-        <CardDescription>
-          Test your knowledge of world flags! Score: {score}/{totalAnswered}
-        </CardDescription>
+    <Card className="min-h-[500px] shadow-md overflow-hidden">
+      <CardHeader className="flex flex-col space-y-1.5 p-4">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-lg font-semibold">Flag Quiz</CardTitle>
+          <Button variant="ghost" size="sm" onClick={onBackToMenu}>
+            <XIcon className="h-4 w-4 mr-2" />
+            Back to Menu
+          </Button>
+        </div>
+        <Progress value={(currentQuestionIndex / questions.length) * 100} />
       </CardHeader>
-      <CardContent>
-        {!isQuizEnded && (
-          <div className="space-y-4">
-            <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-2">Question {currentIndex + 1} of {quizCountries.length}</p>
-              <div className="flex justify-center mb-4">
-                <div className="relative h-36 w-52 border shadow-sm rounded overflow-hidden">
-                  <img 
-                    src={currentCountry.flags.png || currentCountry.flags.svg} 
-                    alt="Country flag"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-              <p className="font-medium">Which country does this flag belong to?</p>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {quizOptions.map((option) => (
-                <Button
-                  key={option.cca3}
-                  variant={
-                    result === null ? "outline" :
-                    option.cca3 === quizCountries[currentIndex].cca3 ? "default" :
-                    userAnswer === option.name.common ? "destructive" : "outline"
-                  }
-                  className="justify-start"
-                  onClick={() => result === null && handleOptionSelect(option)}
-                  disabled={result !== null}
-                >
-                  {option.name.common}
-                  {result !== null && option.cca3 === quizCountries[currentIndex].cca3 && (
-                    <CheckIcon className="ml-auto h-4 w-4" />
-                  )}
-                  {result === 'incorrect' && userAnswer === option.name.common && (
-                    <XIcon className="ml-auto h-4 w-4" />
-                  )}
-                </Button>
-              ))}
-            </div>
-            
-            {result !== null && (
-              <div className="flex justify-center mt-4">
-                <Button onClick={handleNextQuestion}>
-                  {currentIndex < quizCountries.length - 1 ? 'Next Question' : 'Start New Quiz'}
-                </Button>
-              </div>
-            )}
+      <CardContent className="p-4 relative">
+        {loading ? (
+          <div className="flex flex-col space-y-4 items-center justify-center h-full">
+            <Skeleton className="w-32 h-20 rounded-md" />
+            <Skeleton className="w-48 h-8 rounded-md" />
+            <Skeleton className="w-full h-10 rounded-md" />
+            <Skeleton className="w-full h-10 rounded-md" />
+            <Skeleton className="w-full h-10 rounded-md" />
           </div>
-        )}
-        
-        {isQuizEnded && (
-          <div className="text-center space-y-4">
-            <p className="font-medium text-lg">Quiz Complete!</p>
-            <p>Your score: {score} out of {quizCountries.length}</p>
-            <Button onClick={initializeQuiz}>
-              <RefreshCwIcon className="h-4 w-4 mr-2" />
-              Play Again
-            </Button>
+        ) : quizComplete ? (
+          <div className="flex flex-col space-y-4 items-center justify-center h-full">
+            <h2 className="text-2xl font-bold">Quiz Complete!</h2>
+            <p className="text-lg">Your Score: {score} / {questions.length}</p>
+            <Button onClick={resetQuiz}>Play Again</Button>
+          </div>
+        ) : currentQuestion ? (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentQuestionIndex}
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="flex flex-col space-y-4"
+            >
+              <div className="flex justify-center">
+                {!flagLoaded && <Skeleton className="w-64 h-40 rounded-md absolute" />}
+                <img
+                  src={currentQuestion.flag}
+                  alt="Flag"
+                  className={`w-64 h-40 object-cover rounded-md transition-opacity duration-300 ${flagLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={handleImageLoad}
+                />
+              </div>
+              <div className="flex flex-col space-y-2">
+                {currentQuestion.options.map((option: string) => (
+                  <Button
+                    key={option}
+                    variant="outline"
+                    className={`w-full justify-start ${selectedOption === option ? (isCorrect ? 'bg-green-500 text-white hover:bg-green-700' : 'bg-red-500 text-white hover:bg-red-700') : ''
+                      }`}
+                    onClick={() => handleAnswer(option)}
+                    disabled={selectedOption !== null}
+                  >
+                    {option}
+                  </Button>
+                ))}
+              </div>
+              {isCorrect !== null && (
+                <motion.div
+                  variants={buttonVariants}
+                  initial="hidden"
+                  animate="visible"
+                  className="flex justify-end"
+                >
+                  <Button onClick={nextQuestion}>
+                    Next Question
+                    <ArrowRightIcon className="ml-2 h-4 w-4" />
+                  </Button>
+                </motion.div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+        ) : (
+          <div className="flex flex-col space-y-4 items-center justify-center h-full">
+            <h2 className="text-2xl font-bold">No questions available</h2>
+            <Button onClick={resetQuiz}>Try Again</Button>
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex-col items-start space-y-2">
-        <p className="text-sm font-medium">Quiz Options</p>
-        <div className="flex flex-wrap gap-2">
-          <p className="text-xs text-muted-foreground mr-2 self-center">Number of options:</p>
-          {[2, 3, 4, 5, 6].map((count) => (
-            <Button
-              key={count}
-              variant={optionsCount === count ? "default" : "outline"}
-              size="sm"
-              onClick={() => handleOptionCountChange(count)}
-              className="h-7 px-3"
-            >
-              {count}
-            </Button>
-          ))}
-        </div>
-      </CardFooter>
     </Card>
   );
 };

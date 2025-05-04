@@ -6,7 +6,7 @@ import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ArrowLeftIcon, MapIcon, GlobeIcon, PlusIcon, AirplaneIcon, MapPinIcon } from 'lucide-react';
+import { ArrowLeftIcon, MapIcon, GlobeIcon, PlusIcon, PlaneIcon, MapPinIcon } from 'lucide-react';
 import Header from '@/components/Header';
 import ThemeToggle from '@/components/ThemeToggle';
 import TripForm, { Trip } from '@/components/TripPlanner/TripForm';

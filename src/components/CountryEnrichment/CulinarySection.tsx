@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { UtensilsIcon } from 'lucide-react';
@@ -13,7 +12,7 @@ interface CulinarySectionProps {
 }
 
 const CulinarySection = ({ countryName }: CulinarySectionProps) => {
-  const [culinaryInfo, setCulinaryInfo] = useState<CulinaryInfo[]>([]);
+  const [culinaryItems, setCulinaryItems] = useState<CulinaryInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +22,7 @@ const CulinarySection = ({ countryName }: CulinarySectionProps) => {
         setLoading(true);
         setError(null);
         const info = await countryEnrichmentApi.getCulinaryInfo(countryName);
-        setCulinaryInfo(info);
+        setCulinaryItems(info);
       } catch (err) {
         console.error('Failed to fetch culinary information:', err);
         setError('Could not load culinary information.');
@@ -37,7 +36,8 @@ const CulinarySection = ({ countryName }: CulinarySectionProps) => {
     }
   }, [countryName]);
 
-  const container = {
+  // Define the variants properly
+  const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
@@ -47,18 +47,18 @@ const CulinarySection = ({ countryName }: CulinarySectionProps) => {
     }
   };
 
-  const item = {
+  const itemVariants = {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
   };
 
   if (loading) {
     return (
-      <Card className="shadow-md hover:shadow-lg transition-shadow">
+      <Card className="shadow-md hover:shadow-lg transition-shadow h-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UtensilsIcon className="h-5 w-5 text-primary" />
-            Culinary Highlights
+            Culinary Specialties
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -79,7 +79,7 @@ const CulinarySection = ({ countryName }: CulinarySectionProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UtensilsIcon className="h-5 w-5 text-primary" />
-            Culinary Highlights
+            Culinary Specialties
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -90,29 +90,32 @@ const CulinarySection = ({ countryName }: CulinarySectionProps) => {
   }
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow">
+    <Card className="shadow-md hover:shadow-lg transition-shadow h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <UtensilsIcon className="h-5 w-5 text-primary" />
-          Culinary Highlights
+          Culinary Specialties
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <motion.div
-          variants={container}
+        <motion.div 
+          variants={containerVariants as any}
           initial="hidden"
           animate="show"
           className="space-y-6"
         >
-          {culinaryInfo.length > 0 ? (
-            culinaryInfo.map((item, index) => (
+          {culinaryItems.length > 0 ? (
+            culinaryItems.map((item, index) => (
               <motion.div 
                 key={index} 
-                variants={item}
-                className="border-b last:border-b-0 pb-4 last:pb-0"
+                variants={itemVariants as any}
+                className="flex flex-col md:flex-row gap-4"
               >
-                <h3 className="font-bold mb-1">{item.dish}</h3>
+                <h3 className="font-bold mb-1">{item.name}</h3>
                 <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
+                {item.image && (
+                  <img src={item.image} alt={item.name} className="w-full h-40 object-cover mb-2" />
+                )}
                 {item.ingredients && (
                   <div className="flex flex-wrap gap-2 mt-2">
                     {item.ingredients.map((ingredient, i) => (

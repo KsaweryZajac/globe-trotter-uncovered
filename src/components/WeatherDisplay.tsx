@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -82,6 +81,17 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({
     }
   };
 
+  // Add this function to safely access nested properties
+  const getWindSpeed = (currentCondition: any) => {
+    if (!currentCondition) return null;
+    // Try to access windspeedKmph directly if it exists
+    if (currentCondition.windspeedKmph) return currentCondition.windspeedKmph;
+    // If not, check if it's in a different property structure
+    if (currentCondition.windspeed_kmph) return currentCondition.windspeed_kmph;
+    // If neither exists, return a default value
+    return null;
+  };
+
   return (
     <Card className="overflow-hidden border border-border shadow-md hover:shadow-lg transition-shadow duration-300">
       <CardHeader className="pb-2 border-b">
@@ -141,7 +151,7 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <div className="flex items-center">
                   <WindIcon className="h-4 w-4 mr-2 text-blue-400" />
-                  <span className="text-sm">Wind: {weather.current_condition?.[0]?.windspeedKmph || 'N/A'} km/h</span>
+                  <p className="text-sm">{getWindSpeed(weather.current_condition?.[0]) ? `${getWindSpeed(weather.current_condition?.[0])} km/h` : 'N/A'}</p>
                 </div>
                 <div className="flex items-center">
                   <DropletIcon className="h-4 w-4 mr-2 text-blue-500" />
