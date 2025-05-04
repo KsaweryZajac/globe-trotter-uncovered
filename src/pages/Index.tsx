@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -227,7 +226,12 @@ const Index = () => {
               Discover a new country every day and expand your knowledge of our diverse world.
             </p>
           </div>
-          <CountryOfTheDay onExploreClick={handleExploreCountry} />
+          <CountryOfTheDay 
+            country={featuredCountry}
+            loading={featuredCountryLoading}
+            error={featuredCountryError}
+            onExploreClick={onExploreClick}
+          />
         </motion.div>
 
         <motion.div 

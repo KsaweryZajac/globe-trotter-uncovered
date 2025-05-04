@@ -1,242 +1,224 @@
-
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { ArrowLeftIcon, MapIcon, GlobeIcon, PlusIcon, PlaneIcon, MapPinIcon } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
-import ThemeToggle from '@/components/ThemeToggle';
-import TripForm, { Trip } from '@/components/TripPlanner/TripForm';
+import { PlaneIcon, MapIcon, CalendarIcon } from 'lucide-react';
+import TripForm from '@/components/TripPlanner/TripForm';
 import SavedTrips from '@/components/TripPlanner/SavedTrips';
-import TripMap from '@/components/TripPlanner/TripMap';
 import TripItinerary from '@/components/TripPlanner/TripItinerary';
+import TripMap from '@/components/TripPlanner/TripMap';
 import TripGallery from '@/components/TripPlanner/TripGallery';
+import TripCostEstimate from '@/components/TripPlanner/TripCostEstimate';
 import TripExport from '@/components/TripPlanner/TripExport';
-import api from '@/services/api';
-import { useToast } from '@/hooks/use-toast';
+import DestinationSelector from '@/components/TripPlanner/DestinationSelector';
 
-const TripPlanner: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('plan');
-  const [savedTrips, setSavedTrips] = useLocalStorage<Trip[]>('trips', []);
-  const [currentTrip, setCurrentTrip] = useState<Trip | null>(null);
-  const { toast } = useToast();
-
-  // Fetch all countries for destination selection, sorted alphabetically
-  const { data: countries, isLoading } = useQuery({
-    queryKey: ['countries'],
-    queryFn: async () => {
-      const response = await fetch('https://restcountries.com/v3.1/all');
-      if (!response.ok) {
-        throw new Error('Failed to fetch countries');
-      }
-      const data = await response.json();
-      return data.sort((a: any, b: any) => a.name.common.localeCompare(b.name.common));
-    }
+const TripPlanner = () => {
+  const [activeTab, setActiveTab] = useState("newTrip");
+  const [trip, setTrip] = useState({
+    destination: '',
+    startDate: new Date(),
+    endDate: new Date(),
+    budget: 1000,
+    interests: [],
   });
+  const [selectedTrip, setSelectedTrip] = useState(null);
+  const [isDestinationModalOpen, setIsDestinationModalOpen] = useState(false);
 
-  // Handle saving a trip
-  const handleSaveTrip = (trip: Trip) => {
-    // If this is an update to an existing trip
-    if (savedTrips.some(t => t.id === trip.id)) {
-      setSavedTrips(savedTrips.map(t => t.id === trip.id ? trip : t));
-      toast({
-        title: 'Trip Updated',
-        description: `${trip.title} has been updated successfully.`,
-      });
-    } else {
-      // This is a new trip
-      setSavedTrips([...savedTrips, trip]);
-      toast({
-        title: 'Trip Saved',
-        description: `${trip.title} has been saved to your trips.`,
-      });
-    }
-    
-    // Update current trip
-    setCurrentTrip(trip);
-    
-    // Switch to itinerary tab
-    setActiveTab('itinerary');
+  const openDestinationModal = () => setIsDestinationModalOpen(true);
+  const closeDestinationModal = () => setIsDestinationModalOpen(false);
+
+  const handleDestinationSelect = (destination: string) => {
+    setTrip({ ...trip, destination });
+    closeDestinationModal();
   };
 
-  // Handle selecting a trip to edit
-  const handleSelectTrip = (trip: Trip) => {
-    setCurrentTrip(trip);
-    setActiveTab('plan');
+  const createNewTrip = (newTrip) => {
+    // Logic to save the new trip
+    console.log('New trip created:', newTrip);
+    setTrip(newTrip);
+    setSelectedTrip(newTrip);
   };
 
-  // Handle deleting a trip
-  const handleDeleteTrip = (tripId: string) => {
-    setSavedTrips(savedTrips.filter(trip => trip.id !== tripId));
-    
-    // If the current trip is being deleted, reset it
-    if (currentTrip && currentTrip.id === tripId) {
-      setCurrentTrip(null);
-    }
-    
-    toast({
-      title: 'Trip Deleted',
-      description: 'The trip has been deleted from your saved trips.',
-    });
-  };
-
-  // Start a new trip
-  const handleNewTrip = () => {
-    setCurrentTrip(null);
-    setActiveTab('plan');
+  const selectTrip = (trip) => {
+    // Logic to load a saved trip
+    console.log('Trip selected:', trip);
+    setTrip(trip);
+    setSelectedTrip(trip);
   };
 
   return (
-    <div className="min-h-screen pb-8 bg-gradient-to-b from-background to-background/90">
-      <Header />
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
+      <Header title="Trip Planner" subtitle="Plan your next adventure" icon={<PlaneIcon className="w-6 h-6" />} />
       
-      {/* Hero Section */}
-      <div className="bg-gradient-to-r from-primary/10 to-accent/10 py-8 px-4 mb-8">
-        <div className="container max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                Travel Planner
-              </h1>
-              <p className="text-muted-foreground max-w-xl">
-                Plan your next adventure, organize your itinerary, and explore destinations around the world.
-              </p>
+      <div className="container mx-auto py-12 px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-12"
+        >
+          <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Plan Your Perfect Journey
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            Discover amazing places, create detailed itineraries, and make memories that last a lifetime.
+          </p>
+        </motion.div>
+
+        <Tabs defaultValue="newTrip" className="w-full">
+          <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-8">
+            <TabsTrigger value="newTrip" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <div className="flex items-center gap-2">
+                <PlaneIcon className="h-4 w-4" />
+                Plan New Trip
+              </div>
+            </TabsTrigger>
+            <TabsTrigger value="savedTrips" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <div className="flex items-center gap-2">
+                <MapIcon className="h-4 w-4" />
+                Saved Trips
+              </div>
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="newTrip" className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <Card className="md:col-span-1 shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PlaneIcon className="h-5 w-5 text-primary" />
+                    Trip Details
+                  </CardTitle>
+                  <CardDescription>
+                    Enter your trip information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <TripForm onSubmit={createNewTrip} />
+                </CardContent>
+              </Card>
+              
+              <div className="md:col-span-2 space-y-8">
+                <Card className="shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <CalendarIcon className="h-5 w-5 text-primary" />
+                      Trip Itinerary
+                    </CardTitle>
+                    <CardDescription>
+                      View and customize your trip itinerary
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <TripItinerary trip={selectedTrip} />
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <Card className="shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <MapIcon className="h-5 w-5 text-primary" />
+                        Trip Map
+                      </CardTitle>
+                      <CardDescription>
+                        Explore your destination on the map
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <TripMap destination={trip.destination} />
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-5 h-5 text-primary"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M12 1.5a5.25 5.25 0 00-5.25 5.25v3a3 3 0 00-3 3v6.75a3 3 0 003 3h10.5a3 3 0 003-3v-6.75a3 3 0 00-3-3v-3A5.25 5.25 0 0012 1.5zm-7.5 8.25A3.75 3.75 0 1112 15.75a3.75 3.75 0 013.75-3.75H15a.75.75 0 01.75.75v4.5a.75.75 0 01-.75.75H4.5a.75.75 0 01-.75-.75v-4.5a.75.75 0 01.75-.75h.75z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Trip Gallery
+                      </CardTitle>
+                      <CardDescription>
+                        View photos of your destination
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <TripGallery destination={trip.destination} />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <Card className="shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-5 h-5 text-primary"
+                        >
+                          <path
+                            d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zM16.219 8.906a.75.75 0 00-1.06 0l-3.219 3.219-3.219-3.22a.75.75 0 00-1.061 1.06l3.22 3.219-3.22 3.22a.75.75 0 001.061 1.06l3.219-3.22 3.219 3.22a.75.75 0 001.06-1.06l-3.22-3.219 3.22-3.22a.75.75 0 000-1.06z"
+                          />
+                        </svg>
+                        Cost Estimate
+                      </CardTitle>
+                      <CardDescription>
+                        Estimate the cost of your trip
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <TripCostEstimate budget={trip.budget} />
+                    </CardContent>
+                  </Card>
+
+                  <Card className="shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          fill="currentColor"
+                          className="w-5 h-5 text-primary"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm14.024-.983a1.125 1.125 0 010 1.966l-5.603 3.113A1.125 1.125 0 019 15.93l-.292-.29a1.125 1.125 0 011.587-1.587l.292.29 2.312-1.281a.75.75 0 00.524-.419l5.603-3.113a1.125 1.125 0 011.966 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                        Trip Export
+                      </CardTitle>
+                      <CardDescription>
+                        Export your trip details
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <TripExport trip={selectedTrip} />
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </div>
-            <div className="mt-4 md:mt-0 flex gap-3">
-              {currentTrip ? (
-                <>
-                  <TripExport trip={currentTrip} />
-                  <Button variant="outline" onClick={handleNewTrip} className="flex items-center">
-                    <PlusIcon className="h-4 w-4 mr-2" />
-                    New Trip
-                  </Button>
-                </>
-              ) : (
-                <Button onClick={() => setActiveTab('plan')} className="flex items-center">
-                  <AirplaneIcon className="h-4 w-4 mr-2" />
-                  Start Planning
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
+          </TabsContent>
+          
+          <TabsContent value="savedTrips">
+            <SavedTrips onSelectTrip={selectTrip} />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Main Content */}
-      <main className="container max-w-7xl mx-auto px-4">
-        <Card className="border border-border/50 shadow-md bg-card/50 backdrop-blur-sm">
-          <CardHeader className="pb-2 border-b">
-            <CardTitle className="flex items-center gap-2">
-              {activeTab === 'plan' && <PlusIcon className="h-5 w-5 text-primary" />}
-              {activeTab === 'saved' && <MapPinIcon className="h-5 w-5 text-primary" />}
-              {activeTab === 'itinerary' && <AirplaneIcon className="h-5 w-5 text-primary" />}
-              {activeTab === 'map' && <MapIcon className="h-5 w-5 text-primary" />}
-              {activeTab === 'gallery' && <GlobeIcon className="h-5 w-5 text-primary" />}
-              {activeTab === 'plan' && 'Plan Your Trip'}
-              {activeTab === 'saved' && 'Your Saved Trips'}
-              {activeTab === 'itinerary' && 'Trip Itinerary'}
-              {activeTab === 'map' && 'Destinations Map'}
-              {activeTab === 'gallery' && 'Travel Gallery'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="space-y-6"
-            >
-              <TabsList className="bg-muted/50 p-1 rounded-lg mb-6">
-                <TabsTrigger value="plan" className="flex items-center">
-                  <PlusIcon className="h-4 w-4 mr-2" />
-                  Plan
-                </TabsTrigger>
-                <TabsTrigger value="saved" className="flex items-center">
-                  <MapPinIcon className="h-4 w-4 mr-2" />
-                  Saved
-                </TabsTrigger>
-                <TabsTrigger value="itinerary" className="flex items-center" disabled={!currentTrip}>
-                  <AirplaneIcon className="h-4 w-4 mr-2" />
-                  Itinerary
-                </TabsTrigger>
-                <TabsTrigger value="map" className="flex items-center" disabled={!currentTrip}>
-                  <MapIcon className="h-4 w-4 mr-2" />
-                  Map
-                </TabsTrigger>
-                <TabsTrigger value="gallery" className="flex items-center" disabled={!currentTrip}>
-                  <GlobeIcon className="h-4 w-4 mr-2" />
-                  Gallery
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="plan" className="mt-4">
-                {isLoading ? (
-                  <div className="flex justify-center items-center h-64">
-                    <div className="flex flex-col items-center">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-                      <p className="text-muted-foreground">Loading countries...</p>
-                    </div>
-                  </div>
-                ) : (
-                  <TripForm 
-                    onSaveTrip={handleSaveTrip} 
-                    initialTrip={currentTrip || undefined}
-                    countries={countries || []}
-                  />
-                )}
-              </TabsContent>
-              
-              <TabsContent value="saved" className="mt-4">
-                <SavedTrips 
-                  trips={savedTrips}
-                  onSelectTrip={handleSelectTrip}
-                  onDeleteTrip={handleDeleteTrip}
-                />
-              </TabsContent>
-              
-              <TabsContent value="itinerary" className="mt-4">
-                {currentTrip ? (
-                  <TripItinerary trip={currentTrip} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64 gap-4">
-                    <p className="text-muted-foreground">No trip selected.</p>
-                    <Button onClick={() => setActiveTab('plan')}>Plan a Trip</Button>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="map" className="mt-4">
-                {currentTrip ? (
-                  <TripMap destinations={currentTrip.destinations} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64 gap-4">
-                    <p className="text-muted-foreground">No trip selected.</p>
-                    <Button onClick={() => setActiveTab('plan')}>Plan a Trip</Button>
-                  </div>
-                )}
-              </TabsContent>
-              
-              <TabsContent value="gallery" className="mt-4">
-                {currentTrip ? (
-                  <TripGallery destinations={currentTrip.destinations} />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-64 gap-4">
-                    <p className="text-muted-foreground">No trip selected.</p>
-                    <Button onClick={() => setActiveTab('plan')}>Plan a Trip</Button>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
-      </main>
-
-      {/* Footer */}
-      <footer className="container mt-12 text-center text-sm text-muted-foreground">
-        <p>&copy; {new Date().getFullYear()} Culture Explorer - Zajac Ksawery</p>
-      </footer>
     </div>
   );
 };

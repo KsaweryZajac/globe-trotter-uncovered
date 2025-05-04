@@ -49,6 +49,44 @@ export interface GameState {
 // For now, we'll use a mock API that simulates backend behavior
 const API_BASE_URL = 'https://api.example.com/flag-quiz';
 
+// Function to get flag quiz questions
+export const getFlagQuiz = async () => {
+  try {
+    // In a real implementation, we'd fetch from an API
+    // For now, we'll return a mock quiz with a few countries
+    return [
+      {
+        flag: "https://flagcdn.com/w320/us.png",
+        options: ["United States", "Canada", "United Kingdom", "Australia"],
+        correctAnswer: "United States"
+      },
+      {
+        flag: "https://flagcdn.com/w320/jp.png",
+        options: ["China", "South Korea", "Japan", "Vietnam"],
+        correctAnswer: "Japan"
+      },
+      {
+        flag: "https://flagcdn.com/w320/br.png",
+        options: ["Argentina", "Brazil", "Peru", "Colombia"],
+        correctAnswer: "Brazil"
+      },
+      {
+        flag: "https://flagcdn.com/w320/fr.png",
+        options: ["Italy", "Germany", "Spain", "France"],
+        correctAnswer: "France"
+      },
+      {
+        flag: "https://flagcdn.com/w320/za.png",
+        options: ["Nigeria", "Kenya", "South Africa", "Egypt"],
+        correctAnswer: "South Africa"
+      }
+    ];
+  } catch (error) {
+    console.error("Error fetching flag quiz:", error);
+    throw new Error("Failed to fetch flag quiz questions");
+  }
+};
+
 // In a real implementation, this would be actual API calls
 // For now, we'll simulate the backend with local storage and timeouts
 // to demonstrate the integration pattern

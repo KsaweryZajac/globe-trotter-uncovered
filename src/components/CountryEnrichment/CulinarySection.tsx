@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { UtensilsIcon } from 'lucide-react';
@@ -111,10 +112,10 @@ const CulinarySection = ({ countryName }: CulinarySectionProps) => {
                 variants={itemVariants as any}
                 className="flex flex-col md:flex-row gap-4"
               >
-                <h3 className="font-bold mb-1">{item.name}</h3>
+                <h3 className="font-bold mb-1">{item.dish || 'Unknown dish'}</h3>
                 <p className="text-sm text-muted-foreground mb-2">{item.description}</p>
                 {item.image && (
-                  <img src={item.image} alt={item.name} className="w-full h-40 object-cover mb-2" />
+                  <img src={item.image} alt={item.dish || 'Dish image'} className="w-full h-40 object-cover mb-2" />
                 )}
                 {item.ingredients && (
                   <div className="flex flex-wrap gap-2 mt-2">
