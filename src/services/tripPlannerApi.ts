@@ -6,16 +6,35 @@ export interface PointOfInterest {
   description: string;
   type: string;
   rating?: number;
+  // Add missing properties
+  image?: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  link?: string;
 }
 
+// Update TripDestination interface to match what's used in TripForm.tsx
 export interface TripDestination {
-  name: {
-    common: string;
-    official: string;
+  country: {
+    name: {
+      common: string;
+      official: string;
+    };
+    cca3?: string;
+    capital?: string[];
+    latlng?: number[];
+    flags?: {
+      svg: string;
+      png: string;
+    }
   };
-  capital?: string[];
-  region: string;
-  flag: string;
+  city: string;
+  pointsOfInterest: PointOfInterest[];
+  selectedPOIs: PointOfInterest[];
+  region?: string;
+  flag?: string;
 }
 
 export interface TripFormProps {
@@ -32,7 +51,7 @@ export interface TripGalleryProps {
 }
 
 export interface TripCostEstimateProps {
-  destinations: any[]; // Using any[] since the actual structure might be different
+  destinations: TripDestination[]; 
   tripDuration?: number;
   travelers?: number;
   homeCountry?: string;
@@ -53,21 +72,39 @@ const getPointsOfInterest = async (city: string, country: string): Promise<Point
       name: `${city} Museum of Art`,
       description: 'A beautiful museum featuring local and international art',
       type: 'museum',
-      rating: 4.5
+      rating: 4.5,
+      image: 'https://source.unsplash.com/400x300/?museum',
+      location: {
+        lat: 0,
+        lng: 0
+      },
+      link: 'https://example.com/museum'
     },
     {
       id: '2',
       name: `${city} Historical District`,
       description: 'Walk through centuries of history in the old town',
       type: 'district',
-      rating: 4.8
+      rating: 4.8,
+      image: 'https://source.unsplash.com/400x300/?historical',
+      location: {
+        lat: 0.01,
+        lng: 0.01
+      },
+      link: 'https://example.com/historical'
     },
     {
       id: '3',
       name: `${city} Central Park`,
       description: 'Relax in this beautiful urban green space',
       type: 'park',
-      rating: 4.3
+      rating: 4.3,
+      image: 'https://source.unsplash.com/400x300/?park',
+      location: {
+        lat: -0.01,
+        lng: -0.01
+      },
+      link: 'https://example.com/park'
     }
   ];
 };

@@ -6,16 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
 import { Plane, Map, Calendar, Search } from 'lucide-react';
-import TripForm from '@/components/TripPlanner/TripForm';
+import TripForm, { Trip, TripDestination as TripFormDestination } from '@/components/TripPlanner/TripForm';
 import SavedTrips from '@/components/TripPlanner/SavedTrips';
 import TripItinerary from '@/components/TripPlanner/TripItinerary';
 import TripMap from '@/components/TripPlanner/TripMap';
 import TripGallery from '@/components/TripPlanner/TripGallery';
 import TripCostEstimate from '@/components/TripPlanner/TripCostEstimate';
 import TripExport from '@/components/TripPlanner/TripExport';
-import { TripDestination } from '@/services/tripPlannerApi';
-import { useQuery } from '@tanstack/react-query';
 import { getAllCountries } from '@/services/api';
+import { useQuery } from '@tanstack/react-query';
 
 // Define mock trips for SavedTrips component
 const mockTrips = [
@@ -44,7 +43,7 @@ const TripPlanner = () => {
     budget: 1000,
     interests: [],
   });
-  const [selectedTrip, setSelectedTrip] = useState(null);
+  const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [isDestinationModalOpen, setIsDestinationModalOpen] = useState(false);
   const [trips, setTrips] = useState(mockTrips);
 
@@ -62,7 +61,7 @@ const TripPlanner = () => {
     closeDestinationModal();
   };
 
-  const createNewTrip = (newTrip: any) => {
+  const createNewTrip = (newTrip: Trip) => {
     // Logic to save the new trip
     console.log('New trip created:', newTrip);
     setTrip(newTrip);
@@ -70,7 +69,7 @@ const TripPlanner = () => {
     setTrips([...trips, { ...newTrip, id: Date.now().toString() }]);
   };
 
-  const selectTrip = (trip: any) => {
+  const selectTrip = (trip: Trip) => {
     // Logic to load a saved trip
     console.log('Trip selected:', trip);
     setTrip(trip);
@@ -84,17 +83,8 @@ const TripPlanner = () => {
     }
   };
 
-  // Convert string destination to TripDestination format
-  const formatDestination = (destination: string): TripDestination => {
-    return {
-      name: {
-        common: destination,
-        official: destination
-      },
-      region: '',
-      flag: '',
-    };
-  };
+  // Create empty destinations array with proper type for initial state
+  const emptyDestinations: TripFormDestination[] = [];
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
@@ -179,7 +169,7 @@ const TripPlanner = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <TripMap destinations={trip.destination ? [formatDestination(trip.destination)] : []} />
+                      <TripMap destinations={selectedTrip?.destinations || emptyDestinations} />
                     </CardContent>
                   </Card>
 
@@ -205,7 +195,7 @@ const TripPlanner = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <TripGallery destinations={trip.destination ? [formatDestination(trip.destination)] : []} />
+                      <TripGallery destinations={selectedTrip?.destinations || emptyDestinations} />
                     </CardContent>
                   </Card>
                 </div>
@@ -231,11 +221,18 @@ const TripPlanner = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <TripCostEstimate 
-                        destinations={trip.destination ? [{ country: { name: { common: trip.destination, official: trip.destination } }, city: '' }] : []} 
-                        tripDuration={7} 
-                        homeCountry=""
-                      />
+                      {selectedTrip ? (
+                        <TripCostEstimate 
+                          destinations={selectedTrip.destinations} 
+                          tripDuration={selectedTrip.startDate && selectedTrip.endDate ? 
+                            Math.ceil((new Date(selectedTrip.endDate).getTime() - new Date(selectedTrip.startDate).getTime()) / (1000 * 60 * 60 * 24)) : 7} 
+                          homeCountry={selectedTrip.homeCountry}
+                        />
+                      ) : (
+                        <div className="text-center p-4">
+                          <p className="text-muted-foreground">Select or create a trip to see cost estimates</p>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
 

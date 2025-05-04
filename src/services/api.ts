@@ -300,4 +300,7 @@ const api = {
   }
 };
 
+// Export the getAllCountries function as a named export
+export const getAllCountries = api.getAllCountries;
+
 export default api;
