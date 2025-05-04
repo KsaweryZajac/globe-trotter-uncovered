@@ -12,7 +12,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { CalendarIcon, PlusIcon, SaveIcon, TrashIcon, HomeIcon } from 'lucide-react';
 import type { Country } from '@/services/api';
-import tripPlannerApi, { PointOfInterest } from '@/services/tripPlannerApi';
+import { PointOfInterest } from '@/services/tripPlannerApi';
 import DestinationSelector from './DestinationSelector';
 import TripCostEstimate from './TripCostEstimate';
 

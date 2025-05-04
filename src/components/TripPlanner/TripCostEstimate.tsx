@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ExternalLinkIcon, PlaneIcon, BedDoubleIcon, UtensilsIcon, MapPinIcon } from 'lucide-react';
-import tripPlannerApi from '@/services/tripPlannerApi';
+import { tripPlannerApi } from '@/services/tripPlannerApi';
 import { TripDestination } from './TripForm';
 
 interface TripCostEstimateProps {
@@ -19,13 +19,14 @@ const TripCostEstimate: React.FC<TripCostEstimateProps> = ({ destinations, tripD
   
   // Calculate costs for each destination
   const costs = destinations.map(dest => {
-    const destinationKey = `${dest.country.cca3}_${dest.city}`;
-    const autoEstimate = tripPlannerApi.calculateTripCost(dest.country.name.common, tripDuration);
+    const destinationKey = `${dest.country?.cca3 || 'unknown'}_${dest.city || 'unknown'}`;
+    const countryName = dest.country?.name?.common || '';
+    const autoEstimate = tripPlannerApi.calculateTripCost(countryName, tripDuration);
     
     return {
-      destination: `${dest.city}, ${dest.country.name.common}`,
+      destination: `${dest.city || ''}, ${countryName}`,
       country: dest.country,
-      city: dest.city,
+      city: dest.city || '',
       key: destinationKey,
       estimate: {
         flights: manualCosts[destinationKey]?.flights !== undefined ? manualCosts[destinationKey].flights : autoEstimate.flights,
@@ -62,22 +63,22 @@ const TripCostEstimate: React.FC<TripCostEstimateProps> = ({ destinations, tripD
   // Generate external links
   const getFlightsLink = (destination: TripDestination) => {
     const from = encodeURIComponent(homeCountry || '');
-    const to = encodeURIComponent(destination.country.name.common);
+    const to = encodeURIComponent(destination.country?.name?.common || '');
     return `https://www.google.com/travel/flights?q=Flights%20from%20${from}%20to%20${to}`;
   };
 
   const getHotelsLink = (destination: TripDestination) => {
-    const location = encodeURIComponent(`${destination.city}, ${destination.country.name.common}`);
+    const location = encodeURIComponent(`${destination.city || ''}, ${destination.country?.name?.common || ''}`);
     return `https://www.booking.com/searchresults.html?ss=${location}`;
   };
   
   const getRestaurantsLink = (destination: TripDestination) => {
-    const location = encodeURIComponent(`${destination.city}, ${destination.country.name.common}`);
+    const location = encodeURIComponent(`${destination.city || ''}, ${destination.country?.name?.common || ''}`);
     return `https://www.tripadvisor.com/Restaurants-g${location}`;
   };
   
   const getAttractionsLink = (destination: TripDestination) => {
-    const location = encodeURIComponent(`${destination.city}, ${destination.country.name.common}`);
+    const location = encodeURIComponent(`${destination.city || ''}, ${destination.country?.name?.common || ''}`);
     return `https://www.tripadvisor.com/Attractions-g${location}`;
   };
 

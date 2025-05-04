@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
-import { Plane, Map, Calendar } from 'lucide-react';
+import { Plane, Map, Calendar, Search } from 'lucide-react';
 import TripForm from '@/components/TripPlanner/TripForm';
 import SavedTrips from '@/components/TripPlanner/SavedTrips';
 import TripItinerary from '@/components/TripPlanner/TripItinerary';
@@ -13,7 +13,9 @@ import TripMap from '@/components/TripPlanner/TripMap';
 import TripGallery from '@/components/TripPlanner/TripGallery';
 import TripCostEstimate from '@/components/TripPlanner/TripCostEstimate';
 import TripExport from '@/components/TripPlanner/TripExport';
-import DestinationSelector from '@/components/TripPlanner/DestinationSelector';
+import { TripDestination } from '@/services/tripPlannerApi';
+import { useQuery } from '@tanstack/react-query';
+import { getAllCountries } from '@/services/api';
 
 // Define mock trips for SavedTrips component
 const mockTrips = [
@@ -46,6 +48,12 @@ const TripPlanner = () => {
   const [isDestinationModalOpen, setIsDestinationModalOpen] = useState(false);
   const [trips, setTrips] = useState(mockTrips);
 
+  // Fetch countries
+  const { data: countries = [] } = useQuery({
+    queryKey: ['countries'],
+    queryFn: getAllCountries
+  });
+
   const openDestinationModal = () => setIsDestinationModalOpen(true);
   const closeDestinationModal = () => setIsDestinationModalOpen(false);
 
@@ -74,6 +82,18 @@ const TripPlanner = () => {
     if (selectedTrip && selectedTrip.id === tripId) {
       setSelectedTrip(null);
     }
+  };
+
+  // Convert string destination to TripDestination format
+  const formatDestination = (destination: string): TripDestination => {
+    return {
+      name: {
+        common: destination,
+        official: destination
+      },
+      region: '',
+      flag: '',
+    };
   };
 
   return (
@@ -124,7 +144,10 @@ const TripPlanner = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TripForm onSaveTrip={createNewTrip} />
+                  <TripForm 
+                    onSaveTrip={createNewTrip}
+                    countries={countries}
+                  />
                 </CardContent>
               </Card>
               
@@ -156,7 +179,7 @@ const TripPlanner = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <TripMap destinations={[trip.destination]} />
+                      <TripMap destinations={trip.destination ? [formatDestination(trip.destination)] : []} />
                     </CardContent>
                   </Card>
 
@@ -182,7 +205,7 @@ const TripPlanner = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <TripGallery destinations={[trip.destination]} />
+                      <TripGallery destinations={trip.destination ? [formatDestination(trip.destination)] : []} />
                     </CardContent>
                   </Card>
                 </div>
@@ -209,7 +232,7 @@ const TripPlanner = () => {
                     </CardHeader>
                     <CardContent>
                       <TripCostEstimate 
-                        destinations={[{ country: { name: { common: trip.destination } }, city: '' }]} 
+                        destinations={trip.destination ? [{ country: { name: { common: trip.destination, official: trip.destination } }, city: '' }] : []} 
                         tripDuration={7} 
                         homeCountry=""
                       />

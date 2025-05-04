@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TrashIcon } from 'lucide-react';
 import { Country } from '@/services/api';
-import { PointOfInterest } from '@/services/tripPlannerApi';
-import tripPlannerApi from '@/services/tripPlannerApi';
+import { PointOfInterest, tripPlannerApi } from '@/services/tripPlannerApi';
 
 interface DestinationSelectorProps {
   countries: Country[];
