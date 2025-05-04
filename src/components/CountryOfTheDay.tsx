@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GlobeIcon } from 'lucide-react';
 import api, { Country } from '@/services/api';
 
-interface CountryOfTheDayProps {
-  onExploreClick?: (countryName: string) => void;
-}
-
-const CountryOfTheDay: React.FC<CountryOfTheDayProps> = ({ onExploreClick }) => {
+const CountryOfTheDay: React.FC = () => {
   const [country, setCountry] = useState<Country | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const getCountryOfTheDay = async () => {
@@ -49,8 +46,10 @@ const CountryOfTheDay: React.FC<CountryOfTheDayProps> = ({ onExploreClick }) => 
 
   // Handle the explore button click
   const handleExploreClick = () => {
-    if (country && onExploreClick) {
-      onExploreClick(country.name.common);
+    if (country) {
+      // Store the country name in sessionStorage for the Search page to use
+      sessionStorage.setItem('preselectedCountry', country.name.common);
+      navigate('/search');
     }
   };
 
@@ -98,19 +97,10 @@ const CountryOfTheDay: React.FC<CountryOfTheDayProps> = ({ onExploreClick }) => 
               <p className="text-muted-foreground mb-1">Capital: {country.capital?.[0] || 'N/A'}</p>
               <p className="text-muted-foreground mb-4">Population: {country.population.toLocaleString()}</p>
               
-              {onExploreClick ? (
-                <Button onClick={handleExploreClick} className="mt-2">
-                  <GlobeIcon className="mr-2 h-4 w-4" />
-                  Explore Country
-                </Button>
-              ) : (
-                <Link to="/search">
-                  <Button className="mt-2">
-                    <GlobeIcon className="mr-2 h-4 w-4" />
-                    Explore Countries
-                  </Button>
-                </Link>
-              )}
+              <Button onClick={handleExploreClick} className="mt-2">
+                <GlobeIcon className="mr-2 h-4 w-4" />
+                Explore Country
+              </Button>
             </div>
             <div className="relative h-60 md:h-auto overflow-hidden bg-muted">
               {country.flags?.svg && (
