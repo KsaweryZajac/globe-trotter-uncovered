@@ -17,16 +17,49 @@ const CelebritiesSection = ({ countryName }: CelebritiesSectionProps) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Non-person filter terms
+  const nonPersonTerms = [
+    'mountains', 'ethnic', 'group', 'list', 'range', 'region', 'river',
+    'lake', 'forest', 'valley', 'cuisine', 'dish', 'food', 'park',
+    'museum', 'monument', 'building', 'festival', 'event', 'tradition',
+    'dance', 'music', 'instrument', 'team', 'city', 'province', 'district'
+  ];
+
   useEffect(() => {
     const fetchCelebrities = async () => {
       try {
         setLoading(true);
         setError(null);
         const celebs = await countryEnrichmentApi.getCelebrities(countryName);
-        setCelebrities(celebs);
+        
+        // Filter out non-person entries by checking for common indicators
+        const filteredCelebs = celebs.filter(celeb => {
+          const lowerCaseDescription = celeb.description.toLowerCase();
+          const lowerCaseName = celeb.name.toLowerCase();
+          const lowerCaseProfession = celeb.profession.toLowerCase();
+          
+          // Check for non-person indicators
+          const isNonPerson = nonPersonTerms.some(term => 
+            lowerCaseName.includes(term) || 
+            lowerCaseProfession.includes(term) || 
+            lowerCaseDescription.includes(`list of ${term}`) ||
+            lowerCaseDescription.includes(`group of ${term}`)
+          );
+          
+          // Additional checks for list-like entries
+          const isListEntry = 
+            lowerCaseName.includes('list') || 
+            lowerCaseDescription.startsWith('list') ||
+            lowerCaseName.includes(' of ') || 
+            lowerCaseName.includes('most ');
+          
+          return !isNonPerson && !isListEntry;
+        });
+        
+        setCelebrities(filteredCelebs);
       } catch (err) {
         console.error('Failed to fetch celebrities:', err);
-        setError('Could not load celebrities.');
+        setError('Could not load notable people.');
       } finally {
         setLoading(false);
       }
@@ -64,7 +97,7 @@ const CelebritiesSection = ({ countryName }: CelebritiesSectionProps) => {
 
   if (loading) {
     return (
-      <Card className="shadow-md hover:shadow-lg transition-shadow">
+      <Card className="shadow-md hover:shadow-lg transition-shadow h-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserIcon className="h-5 w-5 text-primary" />
@@ -88,7 +121,7 @@ const CelebritiesSection = ({ countryName }: CelebritiesSectionProps) => {
 
   if (error) {
     return (
-      <Card className="shadow-md">
+      <Card className="shadow-md h-full">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <UserIcon className="h-5 w-5 text-primary" />
@@ -103,7 +136,7 @@ const CelebritiesSection = ({ countryName }: CelebritiesSectionProps) => {
   }
 
   return (
-    <Card className="shadow-md hover:shadow-lg transition-shadow">
+    <Card className="shadow-md hover:shadow-lg transition-shadow h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <UserIcon className="h-5 w-5 text-primary" />

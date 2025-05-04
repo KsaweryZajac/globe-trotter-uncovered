@@ -11,8 +11,9 @@ import CountryBorderMap from "@/components/CountryBorderMap";
 import HistoricalEvents from "@/components/CountryEnrichment/HistoricalEvents";
 import CelebritiesSection from "@/components/CountryEnrichment/CelebritiesSection";
 import CulinarySection from "@/components/CountryEnrichment/CulinarySection";
+import ImageGallery from "@/components/ImageGallery";
 import { Button } from "@/components/ui/button";
-import { GlobeIcon, RefreshCcw } from "lucide-react";
+import { GlobeIcon, RefreshCcw, SearchIcon } from "lucide-react";
 import api, { Country, NewsArticle, Weather } from "@/services/api";
 import { toast } from "sonner";
 
@@ -186,6 +187,22 @@ const Search = () => {
 
   const isFavorite = country ? favorites.some(fav => fav.cca3 === country.cca3) : false;
 
+  // Animation variants
+  const containerAnimation = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2
+      }
+    }
+  };
+
+  const itemAnimation = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
       <Header />
@@ -236,53 +253,67 @@ const Search = () => {
 
         {country && (
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            variants={containerAnimation}
+            initial="hidden"
+            animate="show"
             className="space-y-8"
           >
-            <CountryCard 
-              country={country}
-              news={news} 
-              weather={weather} 
-              translation={translation}
-              onAddToFavorites={handleAddToFavorites}
-              onTranslate={handleTranslate}
-              onCitySearch={handleCitySearch}
-              isFavorite={isFavorite}
-              isLoading={loading}
-              newsLoading={newsLoading}
-              weatherLoading={weatherLoading}
-              translationLoading={translationLoading}
-              newsError={newsError}
-              weatherError={weatherError}
-              translationError={translationError}
-            />
+            <motion.div variants={itemAnimation}>
+              <CountryCard 
+                country={country}
+                news={news} 
+                weather={weather} 
+                translation={translation}
+                onAddToFavorites={handleAddToFavorites}
+                onTranslate={handleTranslate}
+                isFavorite={isFavorite}
+                isLoading={loading}
+                newsLoading={newsLoading}
+                weatherLoading={weatherLoading}
+                translationLoading={translationLoading}
+                newsError={newsError}
+                weatherError={weatherError}
+                translationError={translationError}
+              />
+            </motion.div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <CountryBorderMap countryName={country.name.common} countryCode={country.cca3} />
-              <WeatherDisplay countryName={country.name.common} capital={country.capital?.[0]} />
-            </div>
+            <motion.div variants={itemAnimation}>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <CountryBorderMap countryName={country.name.common} countryCode={country.cca3} />
+                <WeatherDisplay countryName={country.name.common} capital={country.capital?.[0]} />
+              </div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <HistoricalEvents countryName={country.name.common} />
-              <CelebritiesSection countryName={country.name.common} />
-              <CulinarySection countryName={country.name.common} />
-            </div>
+            <motion.div variants={itemAnimation}>
+              <ImageGallery country={country.name.common} />
+            </motion.div>
 
-            <TranslationSection 
-              countryName={country.name.common} 
-              translation={translation}
-              onTranslate={handleTranslate}
-              isLoading={translationLoading}
-              error={translationError}
-            />
+            <motion.div variants={itemAnimation}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <HistoricalEvents countryName={country.name.common} />
+                <CelebritiesSection countryName={country.name.common} />
+                <CulinarySection countryName={country.name.common} />
+              </div>
+            </motion.div>
+
+            <motion.div variants={itemAnimation}>
+              <TranslationSection 
+                countryName={country.name.common} 
+                translation={translation}
+                onTranslate={handleTranslate}
+                isLoading={translationLoading}
+                error={translationError}
+              />
+            </motion.div>
             
-            <NewsSection 
-              countryName={country.name.common}
-              news={news}
-              isLoading={newsLoading}
-              error={newsError}
-            />
+            <motion.div variants={itemAnimation}>
+              <NewsSection 
+                countryName={country.name.common}
+                news={news}
+                isLoading={newsLoading}
+                error={newsError}
+              />
+            </motion.div>
           </motion.div>
         )}
       </div>
