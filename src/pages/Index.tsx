@@ -93,13 +93,13 @@ const Index = () => {
             <div className="flex flex-wrap justify-center gap-4">
               <Link to="/search">
                 <Button size="lg" className="btn-shine gradient-primary text-white">
-                  <SearchIcon className="h-5 w-5 mr-2" />
+                  <Search className="h-5 w-5 mr-2" />
                   Search Countries
                 </Button>
               </Link>
               <Link to="/trip-planner">
                 <Button size="lg" variant="outline" className="border-primary/30 hover:border-primary/60">
-                  <MapIcon className="h-5 w-5 mr-2" />
+                  <Map className="h-5 w-5 mr-2" />
                   Plan Your Trip
                 </Button>
               </Link>
@@ -130,7 +130,7 @@ const Index = () => {
               <Card className="h-full modern-card hover:border-primary/30 flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <SearchIcon className="h-5 w-5 text-primary" />
+                    <Search className="h-5 w-5 text-primary" />
                     Search Countries
                   </CardTitle>
                   <CardDescription>
@@ -157,7 +157,7 @@ const Index = () => {
               <Card className="h-full modern-card hover:border-primary/30 flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <HeartIcon className="h-5 w-5 text-primary" />
+                    <Heart className="h-5 w-5 text-primary" />
                     Favorite Countries
                   </CardTitle>
                   <CardDescription>
@@ -184,7 +184,7 @@ const Index = () => {
               <Card className="h-full modern-card hover:border-primary/30 flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <MapIcon className="h-5 w-5 text-primary" />
+                    <Map className="h-5 w-5 text-primary" />
                     Trip Planner
                   </CardTitle>
                   <CardDescription>
@@ -211,7 +211,7 @@ const Index = () => {
               <Card className="h-full modern-card hover:border-primary/30 flex flex-col">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <FlagIcon className="h-5 w-5 text-primary" />
+                    <Flag className="h-5 w-5 text-primary" />
                     Flag Quiz
                   </CardTitle>
                   <CardDescription>
@@ -274,25 +274,25 @@ const Index = () => {
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/search">
               <Button size="lg" className="gap-2 btn-shine">
-                <SearchIcon className="h-5 w-5" />
+                <Search className="h-5 w-5" />
                 Search Countries
               </Button>
             </Link>
             <Link to="/trip-planner">
               <Button size="lg" variant="outline" className="gap-2">
-                <MapIcon className="h-5 w-5" />
+                <Map className="h-5 w-5" />
                 Plan a Trip
               </Button>
             </Link>
             <Link to="/favorites">
               <Button size="lg" variant="outline" className="gap-2">
-                <HeartIcon className="h-5 w-5" />
+                <Heart className="h-5 w-5" />
                 View Favorites
               </Button>
             </Link>
             <Link to="/flag-quiz">
               <Button size="lg" variant="outline" className="gap-2">
-                <FlagIcon className="h-5 w-5" />
+                <Flag className="h-5 w-5" />
                 Play Flag Quiz
               </Button>
             </Link>

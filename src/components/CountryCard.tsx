@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPin, Globe, Users, DollarSign, Languages, Image, Link } from 'lucide-react';
+import { Map as MapIcon, Globe, Users, CircleDollar, Languages, Image, Link } from 'lucide-react';
 
 interface CountryCardProps {
   country: Country | null;
@@ -113,7 +113,7 @@ const CountryCard: React.FC<CountryCardProps> = ({
         />
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <MapIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{country.capital?.[0] || 'N/A'}, {country.region}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -121,7 +121,7 @@ const CountryCard: React.FC<CountryCardProps> = ({
             <span className="text-sm text-muted-foreground">Population: {country.population.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CircleDollar className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
               Currency: {Object.values(country.currencies || {})
                 .map((currency) => currency.name)

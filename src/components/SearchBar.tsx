@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SearchIcon } from "lucide-react";
+import { Search as SearchIcon } from "lucide-react";
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
