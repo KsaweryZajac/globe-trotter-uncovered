@@ -1,10 +1,11 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
-import { PlaneIcon, MapIcon, CalendarIcon } from 'lucide-react';
+import { Plane, Map, Calendar } from 'lucide-react';
 import TripForm from '@/components/TripPlanner/TripForm';
 import SavedTrips from '@/components/TripPlanner/SavedTrips';
 import TripItinerary from '@/components/TripPlanner/TripItinerary';
@@ -13,6 +14,24 @@ import TripGallery from '@/components/TripPlanner/TripGallery';
 import TripCostEstimate from '@/components/TripPlanner/TripCostEstimate';
 import TripExport from '@/components/TripPlanner/TripExport';
 import DestinationSelector from '@/components/TripPlanner/DestinationSelector';
+
+// Define mock trips for SavedTrips component
+const mockTrips = [
+  {
+    id: '1',
+    title: 'European Adventure',
+    startDate: '2023-06-01',
+    endDate: '2023-06-15',
+    destinations: []
+  },
+  {
+    id: '2',
+    title: 'Asian Exploration',
+    startDate: '2023-08-10',
+    endDate: '2023-08-25',
+    destinations: []
+  }
+];
 
 const TripPlanner = () => {
   const [activeTab, setActiveTab] = useState("newTrip");
@@ -25,6 +44,7 @@ const TripPlanner = () => {
   });
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [isDestinationModalOpen, setIsDestinationModalOpen] = useState(false);
+  const [trips, setTrips] = useState(mockTrips);
 
   const openDestinationModal = () => setIsDestinationModalOpen(true);
   const closeDestinationModal = () => setIsDestinationModalOpen(false);
@@ -34,23 +54,31 @@ const TripPlanner = () => {
     closeDestinationModal();
   };
 
-  const createNewTrip = (newTrip) => {
+  const createNewTrip = (newTrip: any) => {
     // Logic to save the new trip
     console.log('New trip created:', newTrip);
     setTrip(newTrip);
     setSelectedTrip(newTrip);
+    setTrips([...trips, { ...newTrip, id: Date.now().toString() }]);
   };
 
-  const selectTrip = (trip) => {
+  const selectTrip = (trip: any) => {
     // Logic to load a saved trip
     console.log('Trip selected:', trip);
     setTrip(trip);
     setSelectedTrip(trip);
   };
 
+  const deleteTrip = (tripId: string) => {
+    setTrips(trips.filter(t => t.id !== tripId));
+    if (selectedTrip && selectedTrip.id === tripId) {
+      setSelectedTrip(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
-      <Header title="Trip Planner" subtitle="Plan your next adventure" icon={<PlaneIcon className="w-6 h-6" />} />
+      <Header />
       
       <div className="container mx-auto py-12 px-4">
         <motion.div
@@ -71,13 +99,13 @@ const TripPlanner = () => {
           <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto mb-8">
             <TabsTrigger value="newTrip" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <div className="flex items-center gap-2">
-                <PlaneIcon className="h-4 w-4" />
+                <Plane className="h-4 w-4" />
                 Plan New Trip
               </div>
             </TabsTrigger>
             <TabsTrigger value="savedTrips" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <div className="flex items-center gap-2">
-                <MapIcon className="h-4 w-4" />
+                <Map className="h-4 w-4" />
                 Saved Trips
               </div>
             </TabsTrigger>
@@ -88,7 +116,7 @@ const TripPlanner = () => {
               <Card className="md:col-span-1 shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <PlaneIcon className="h-5 w-5 text-primary" />
+                    <Plane className="h-5 w-5 text-primary" />
                     Trip Details
                   </CardTitle>
                   <CardDescription>
@@ -96,7 +124,7 @@ const TripPlanner = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <TripForm onSubmit={createNewTrip} />
+                  <TripForm onSaveTrip={createNewTrip} />
                 </CardContent>
               </Card>
               
@@ -104,7 +132,7 @@ const TripPlanner = () => {
                 <Card className="shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <CalendarIcon className="h-5 w-5 text-primary" />
+                      <Calendar className="h-5 w-5 text-primary" />
                       Trip Itinerary
                     </CardTitle>
                     <CardDescription>
@@ -120,7 +148,7 @@ const TripPlanner = () => {
                   <Card className="shadow-md border border-border/50 bg-card/50 backdrop-blur-sm">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <MapIcon className="h-5 w-5 text-primary" />
+                        <Map className="h-5 w-5 text-primary" />
                         Trip Map
                       </CardTitle>
                       <CardDescription>
@@ -128,7 +156,7 @@ const TripPlanner = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <TripMap destination={trip.destination} />
+                      <TripMap destinations={[trip.destination]} />
                     </CardContent>
                   </Card>
 
@@ -154,7 +182,7 @@ const TripPlanner = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <TripGallery destination={trip.destination} />
+                      <TripGallery destinations={[trip.destination]} />
                     </CardContent>
                   </Card>
                 </div>
@@ -180,7 +208,11 @@ const TripPlanner = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <TripCostEstimate budget={trip.budget} />
+                      <TripCostEstimate 
+                        destinations={[{ country: { name: { common: trip.destination } }, city: '' }]} 
+                        tripDuration={7} 
+                        homeCountry=""
+                      />
                     </CardContent>
                   </Card>
 
@@ -215,7 +247,7 @@ const TripPlanner = () => {
           </TabsContent>
           
           <TabsContent value="savedTrips">
-            <SavedTrips onSelectTrip={selectTrip} />
+            <SavedTrips trips={trips} onSelectTrip={selectTrip} onDeleteTrip={deleteTrip} />
           </TabsContent>
         </Tabs>
       </div>

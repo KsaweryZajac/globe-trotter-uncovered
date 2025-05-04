@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 
 // Define types
@@ -23,6 +22,15 @@ export interface Country {
     alt?: string;
   };
   latlng?: number[];
+  coatOfArms?: {
+    png?: string;
+    svg?: string;
+  };
+  borders?: string[];
+  maps?: {
+    googleMaps?: string;
+    openStreetMaps?: string;
+  };
 }
 
 export interface NewsArticle {

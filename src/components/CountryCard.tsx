@@ -1,19 +1,55 @@
+
 import React from 'react';
 import { Country } from '@/services/api';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MapPinIcon, GlobeIcon, UsersIcon, CurrencyIcon, LanguagesIcon, ImageIcon, LinkIcon } from 'lucide-react';
+import { MapPin, Globe, Users, DollarSign, Languages, Image, Link } from 'lucide-react';
 
 interface CountryCardProps {
   country: Country | null;
   loading: boolean;
   error: string | null;
-  onExploreClick: (countryName: string) => void;
+  onExploreClick?: (countryName: string) => void;
+  // Add optional props used in other pages
+  news?: any[];
+  weather?: any;
+  translation?: string | null;
+  onAddToFavorites?: (country: Country) => void;
+  onTranslate?: (text: string, targetLang: string) => Promise<void>;
+  onCitySearch?: (city: string) => Promise<void>;
+  isFavorite?: boolean;
+  isLoading?: boolean;
+  newsLoading?: boolean;
+  weatherLoading?: boolean;
+  translationLoading?: boolean;
+  newsError?: string | null;
+  weatherError?: string | null;
+  translationError?: string | null;
 }
 
-const CountryCard: React.FC<CountryCardProps> = ({ country, loading, error, onExploreClick }) => {
+const CountryCard: React.FC<CountryCardProps> = ({ 
+  country, 
+  loading, 
+  error, 
+  onExploreClick = () => {},
+  // Optional props with defaults
+  news = [],
+  weather = null,
+  translation = null,
+  onAddToFavorites = () => {},
+  onTranslate = async () => {},
+  onCitySearch = async () => {},
+  isFavorite = false,
+  isLoading = false,
+  newsLoading = false,
+  weatherLoading = false,
+  translationLoading = false,
+  newsError = null,
+  weatherError = null,
+  translationError = null,
+}) => {
   if (loading) {
     return (
       <Card className="shadow-md hover:shadow-lg transition-shadow">
@@ -64,7 +100,7 @@ const CountryCard: React.FC<CountryCardProps> = ({ country, loading, error, onEx
     <Card className="shadow-md hover:shadow-lg transition-shadow">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <GlobeIcon className="h-5 w-5 text-primary" />
+          <Globe className="h-5 w-5 text-primary" />
           {country.name.common}
         </CardTitle>
         <CardDescription>{country.name.official}</CardDescription>
@@ -77,15 +113,15 @@ const CountryCard: React.FC<CountryCardProps> = ({ country, loading, error, onEx
         />
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <MapPinIcon className="h-4 w-4 text-muted-foreground" />
+            <MapPin className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">{country.capital?.[0] || 'N/A'}, {country.region}</span>
           </div>
           <div className="flex items-center gap-2">
-            <UsersIcon className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">Population: {country.population.toLocaleString()}</span>
           </div>
           <div className="flex items-center gap-2">
-            <CurrencyIcon className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
               Currency: {Object.values(country.currencies || {})
                 .map((currency) => currency.name)
@@ -93,7 +129,7 @@ const CountryCard: React.FC<CountryCardProps> = ({ country, loading, error, onEx
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <LanguagesIcon className="h-4 w-4 text-muted-foreground" />
+            <Languages className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">
               Languages: {Object.values(country.languages || {}).join(', ') || 'N/A'}
             </span>
@@ -127,10 +163,12 @@ const CountryCard: React.FC<CountryCardProps> = ({ country, loading, error, onEx
         </div>
       </CardContent>
       <CardFooter className="flex justify-between">
-        <Button onClick={() => onExploreClick(country.name.common)}>
-          <ImageIcon className="h-4 w-4 mr-2" />
-          Explore
-        </Button>
+        {onExploreClick && (
+          <Button onClick={() => onExploreClick(country.name.common)}>
+            <Image className="h-4 w-4 mr-2" />
+            Explore
+          </Button>
+        )}
         <div className="flex flex-col space-y-2">
           {country.maps?.googleMaps && (
             <Button variant="outline" size="sm" className="w-full mb-2" asChild>

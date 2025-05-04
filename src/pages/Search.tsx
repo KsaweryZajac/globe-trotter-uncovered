@@ -13,7 +13,7 @@ import CelebritiesSection from "@/components/CountryEnrichment/CelebritiesSectio
 import CulinarySection from "@/components/CountryEnrichment/CulinarySection";
 import ImageGallery from "@/components/ImageGallery";
 import { Button } from "@/components/ui/button";
-import { GlobeIcon, RefreshCcw, SearchIcon } from "lucide-react";
+import { Globe, RefreshCcw, Search as SearchIcon } from "lucide-react";
 import api, { Country, NewsArticle, Weather } from "@/services/api";
 import { toast } from "sonner";
 
@@ -234,7 +234,7 @@ const Search = () => {
               {loading ? (
                 <RefreshCcw className="h-4 w-4 mr-2 animate-spin" />
               ) : (
-                <GlobeIcon className="h-4 w-4 mr-2" />
+                <Globe className="h-4 w-4 mr-2" />
               )}
               Random Country
             </Button>
@@ -261,13 +261,15 @@ const Search = () => {
             <motion.div variants={itemAnimation}>
               <CountryCard 
                 country={country}
+                loading={loading}
+                error={error}
+                onExploreClick={() => {}}
                 news={news} 
                 weather={weather} 
                 translation={translation}
                 onAddToFavorites={handleAddToFavorites}
                 onTranslate={handleTranslate}
                 isFavorite={isFavorite}
-                isLoading={loading}
                 newsLoading={newsLoading}
                 weatherLoading={weatherLoading}
                 translationLoading={translationLoading}

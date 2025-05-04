@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { Country, NewsArticle, Weather } from '@/services/api';
+import { Country } from '@/services/api';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { GlobeIcon } from 'lucide-react';
+import { Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CountryCard from '@/components/CountryCard';
 import api from '@/services/api';
@@ -103,7 +103,7 @@ const Favorites = () => {
           <div className="flex items-center gap-3">
             <Link to="/search">
               <Button variant="outline" className="flex items-center gap-2">
-                <GlobeIcon size={16} />
+                <Globe size={16} />
                 <span className="hidden sm:inline">Search</span>
               </Button>
             </Link>
@@ -177,16 +177,18 @@ const Favorites = () => {
             {selectedCountry ? (
               <CountryCard 
                 country={selectedCountry}
-                news={news}
-                weather={weather}
+                loading={false}
+                error={null}
+                onExploreClick={() => {}}
                 onAddToFavorites={() => removeFavorite(selectedCountry.cca3)}
                 onCitySearch={fetchWeatherForCity}
                 isFavorite={true}
-                isLoading={false}
                 newsLoading={newsLoading}
                 weatherLoading={weatherLoading}
                 newsError={newsError}
                 weatherError={weatherError}
+                news={news}
+                weather={weather}
               />
             ) : (
               <div className="bg-card text-center p-10 rounded-lg border border-border shadow-sm h-full flex flex-col justify-center items-center">

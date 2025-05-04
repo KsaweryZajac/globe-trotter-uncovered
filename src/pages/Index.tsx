@@ -1,23 +1,47 @@
+
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { 
-  GlobeIcon, 
-  HeartIcon, 
-  MapIcon, 
-  FlagIcon, 
-  SearchIcon,
-  Utensils as UtensilsIcon,
-  Users as UsersIcon,
-  History as HistoryIcon
+  Globe, 
+  Heart, 
+  Map, 
+  Flag, 
+  Search,
+  Utensils,
+  Users,
+  History
 } from 'lucide-react';
 import Header from '@/components/Header';
 import CountryOfTheDay from '@/components/CountryOfTheDay';
+import api, { Country } from '@/services/api';
 
 const Index = () => {
   const navigate = useNavigate();
+  const [featuredCountry, setFeaturedCountry] = useState<Country | null>(null);
+  const [featuredCountryLoading, setFeaturedCountryLoading] = useState<boolean>(true);
+  const [featuredCountryError, setFeaturedCountryError] = useState<string | null>(null);
+  
+  // Fetch country of the day on component mount
+  useEffect(() => {
+    const fetchFeaturedCountry = async () => {
+      try {
+        setFeaturedCountryLoading(true);
+        setFeaturedCountryError(null);
+        const randomCountry = await api.getRandomCountry();
+        setFeaturedCountry(randomCountry);
+      } catch (error) {
+        console.error("Failed to fetch featured country:", error);
+        setFeaturedCountryError("Failed to load country of the day");
+      } finally {
+        setFeaturedCountryLoading(false);
+      }
+    };
+    
+    fetchFeaturedCountry();
+  }, []);
   
   const handleExploreCountry = (countryName: string) => {
     // Store the country name in sessionStorage to be used in the Search page
@@ -230,7 +254,7 @@ const Index = () => {
             country={featuredCountry}
             loading={featuredCountryLoading}
             error={featuredCountryError}
-            onExploreClick={onExploreClick}
+            onExploreClick={handleExploreCountry}
           />
         </motion.div>
 
