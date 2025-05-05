@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Header from '@/components/Header';
@@ -259,24 +258,26 @@ const Search = () => {
             className="space-y-8"
           >
             <motion.div variants={itemAnimation}>
-              <CountryCard 
-                country={country}
-                loading={loading}
-                error={error}
-                onExploreClick={() => {}}
-                news={news} 
-                weather={weather} 
-                translation={translation}
-                onAddToFavorites={handleAddToFavorites}
-                onTranslate={handleTranslate}
-                isFavorite={isFavorite}
-                newsLoading={newsLoading}
-                weatherLoading={weatherLoading}
-                translationLoading={translationLoading}
-                newsError={newsError}
-                weatherError={weatherError}
-                translationError={translationError}
-              />
+              <div className="country-card">
+                <CountryCard 
+                  country={country}
+                  loading={loading}
+                  error={error}
+                  onExploreClick={() => {}}
+                  news={news} 
+                  weather={weather} 
+                  translation={translation}
+                  onAddToFavorites={handleAddToFavorites}
+                  onTranslate={handleTranslate}
+                  isFavorite={isFavorite}
+                  newsLoading={newsLoading}
+                  weatherLoading={weatherLoading}
+                  translationLoading={translationLoading}
+                  newsError={newsError}
+                  weatherError={weatherError}
+                  translationError={translationError}
+                />
+              </div>
             </motion.div>
 
             <motion.div variants={itemAnimation}>

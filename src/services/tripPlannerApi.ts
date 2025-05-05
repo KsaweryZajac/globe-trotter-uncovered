@@ -1,3 +1,4 @@
+
 // Define Points of Interest type
 export interface PointOfInterest {
   id: string;
@@ -108,17 +109,27 @@ const getPointsOfInterest = async (city: string, country: string): Promise<Point
   ];
 };
 
+// Updated to use a deterministic algorithm for cost calculation
+// Uses country name as a seed to ensure consistent costs for the same country
 const calculateTripCost = (country: string, duration: number = 7) => {
   // Use fixed prices based on country region to make costs consistent
   const getRegionMultiplier = (countryName: string) => {
     const westernCountries = ['United States', 'Canada', 'United Kingdom', 'Australia', 'New Zealand', 'Germany', 'France', 'Italy', 'Spain', 'Japan'];
     const asianCountries = ['China', 'India', 'Thailand', 'Vietnam', 'Indonesia', 'Malaysia', 'Philippines', 'Singapore', 'South Korea'];
     const latinAmericanCountries = ['Mexico', 'Brazil', 'Argentina', 'Colombia', 'Peru', 'Chile', 'Ecuador', 'Cuba', 'Costa Rica'];
+    const nordicCountries = ['Norway', 'Sweden', 'Finland', 'Denmark', 'Iceland'];
+    const africanCountries = ['South Africa', 'Kenya', 'Egypt', 'Morocco', 'Tanzania', 'Nigeria', 'Ghana'];
     
     if (westernCountries.includes(countryName)) return 1.5;
     if (asianCountries.includes(countryName)) return 0.8;
     if (latinAmericanCountries.includes(countryName)) return 0.7;
-    return 1.0; // Default multiplier
+    if (nordicCountries.includes(countryName)) return 1.8;
+    if (africanCountries.includes(countryName)) return 0.6;
+    
+    // Deterministic multiplier based on country name
+    const nameSum = countryName.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+    const normalizedMultiplier = 0.5 + (nameSum % 15) / 10; // Range: 0.5 - 2.0
+    return normalizedMultiplier;
   };
   
   const multiplier = getRegionMultiplier(country);
