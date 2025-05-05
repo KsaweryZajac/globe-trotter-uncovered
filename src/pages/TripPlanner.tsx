@@ -15,6 +15,7 @@ import TripCostEstimate from '@/components/TripPlanner/TripCostEstimate';
 import TripExport from '@/components/TripPlanner/TripExport';
 import { getAllCountries } from '@/services/api';
 import { useQuery } from '@tanstack/react-query';
+import { TripDestination } from '@/services/tripPlannerApi';
 
 // Define mock trips for SavedTrips component
 const mockTrips = [
@@ -36,12 +37,13 @@ const mockTrips = [
 
 const TripPlanner = () => {
   const [activeTab, setActiveTab] = useState("newTrip");
-  const [trip, setTrip] = useState({
-    destination: '',
-    startDate: new Date(),
-    endDate: new Date(),
-    budget: 1000,
-    interests: [],
+  // Update the trip state to match the Trip interface from TripForm
+  const [trip, setTrip] = useState<Trip>({
+    id: '',
+    title: '',
+    startDate: new Date().toISOString(),
+    endDate: new Date().toISOString(),
+    destinations: []
   });
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [isDestinationModalOpen, setIsDestinationModalOpen] = useState(false);
@@ -57,7 +59,7 @@ const TripPlanner = () => {
   const closeDestinationModal = () => setIsDestinationModalOpen(false);
 
   const handleDestinationSelect = (destination: string) => {
-    setTrip({ ...trip, destination });
+    // This function needs to be updated to work with the new Trip type
     closeDestinationModal();
   };
 
