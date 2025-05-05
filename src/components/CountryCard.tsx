@@ -1,6 +1,4 @@
 
-// This component is read-only, so we need to create a custom style wrapper for it
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Country, NewsArticle, Weather } from '@/services/api';
@@ -49,6 +47,7 @@ interface CountryCardProps {
   translation?: string | null;
   onTranslate?: (text: string, targetLang: string) => void;
   onCitySearch?: (city: string) => void | Promise<void>;
+  children?: React.ReactNode; // Add children prop
 }
 
 const CountryCard: React.FC<CountryCardProps> = ({ 
@@ -68,7 +67,8 @@ const CountryCard: React.FC<CountryCardProps> = ({
   translationLoading,
   newsError,
   weatherError,
-  translationError 
+  translationError,
+  children
 }) => {
   // Apply the custom class to the wrapper
   return (

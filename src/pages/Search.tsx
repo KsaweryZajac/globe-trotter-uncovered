@@ -161,7 +161,9 @@ const Search = () => {
     }
   };
 
-  const handleAddToFavorites = (country: Country) => {
+  const handleAddToFavorites = () => {
+    if (!country) return;
+    
     // Check if country is already in favorites
     const isFavorite = favorites.some(fav => fav.cca3 === country.cca3);
     
@@ -268,7 +270,6 @@ const Search = () => {
                   weather={weather} 
                   translation={translation}
                   onAddToFavorites={handleAddToFavorites}
-                  onTranslate={handleTranslate}
                   isFavorite={isFavorite}
                   newsLoading={newsLoading}
                   weatherLoading={weatherLoading}
@@ -276,6 +277,8 @@ const Search = () => {
                   newsError={newsError}
                   weatherError={weatherError}
                   translationError={translationError}
+                  onTranslate={handleTranslate}
+                  onCitySearch={handleCitySearch}
                 />
               </div>
             </motion.div>
