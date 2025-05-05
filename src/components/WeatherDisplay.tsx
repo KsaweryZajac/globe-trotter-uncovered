@@ -1,195 +1,230 @@
+
 import React, { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CloudSunIcon, SunIcon, CloudRainIcon, ThermometerIcon, WindIcon, SearchIcon, DropletIcon } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
-import api from '@/services/api';
-import { Weather } from '@/services/api';
+import { Badge } from '@/components/ui/badge';
+import { Wind, Droplets, Sun, CloudRain, Cloud, AlertTriangle } from 'lucide-react';
+
+interface Weather {
+  location: {
+    name: string;
+    country: string;
+    region: string;
+  };
+  current: {
+    temp_c: number;
+    temp_f: number;
+    condition: {
+      text: string;
+      icon: string;
+    };
+    wind_kph: number;
+    wind_dir: string;
+    humidity: number;
+    feelslike_c: number;
+    feelslike_f: number;
+    uv: number;
+  };
+  forecast: {
+    forecastday: Array<{
+      date: string;
+      day: {
+        avgtemp_c: number;
+        avgtemp_f: number;
+        condition: {
+          text: string;
+          icon: string;
+        };
+        daily_chance_of_rain: number;
+        maxtemp_c: number;
+        maxtemp_f: number;
+        mintemp_c: number;
+        mintemp_f: number;
+      };
+    }>;
+  };
+}
 
 interface WeatherDisplayProps {
   countryName: string;
-  capital?: string | null;
-  weather?: Weather | null;
+  cityName?: string;
 }
 
-const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ 
-  countryName,
-  capital
-}) => {
-  const [searchCity, setSearchCity] = useState<string>('');
-  const [displayCity, setDisplayCity] = useState<string | null>(capital || null);
+const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName }) => {
   const [weather, setWeather] = useState<Weather | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Fetch weather when city changes
+  const [unit, setUnit] = useState<'c' | 'f'>('c');
+  
   useEffect(() => {
-    if (displayCity) {
-      fetchWeather(displayCity);
+    // Skip if no country name
+    if (!countryName) {
+      setLoading(false);
+      return;
     }
-  }, [displayCity]);
-
-  // Set initial city when capital prop changes
-  useEffect(() => {
-    if (capital && !displayCity) {
-      setDisplayCity(capital);
-    }
-  }, [capital]);
-
-  const fetchWeather = async (city: string) => {
-    if (!city) return;
     
-    setIsLoading(true);
-    setError(null);
+    const fetchWeather = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        const location = cityName || countryName;
+        const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=d76c9971c6cd40dbaa692245232007&q=${location}&days=3&aqi=no&alerts=no`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch weather data');
+        }
+        
+        const data = await response.json();
+        setWeather(data as Weather);
+      } catch (err) {
+        console.error('Weather fetching error:', err);
+        setError('Could not load weather information');
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    try {
-      const weatherData = await api.getWeatherForCity(city);
-      setWeather(weatherData);
-    } catch (err) {
-      console.error("Error fetching weather:", err);
-      setError("Failed to load weather information");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchCity.trim()) {
-      setDisplayCity(searchCity.trim());
-    }
-  };
-
-  const handleCitySearch = (city: string) => {
-    if (city.trim()) {
-      setDisplayCity(city.trim());
-    }
-  };
-
-  // Select appropriate weather icon
-  const getWeatherIcon = (description: string | undefined) => {
-    if (!description) return <CloudSunIcon className="h-10 w-10 text-primary" />;
-    
-    description = description.toLowerCase();
-    if (description.includes('rain') || description.includes('drizzle') || description.includes('shower')) {
-      return <CloudRainIcon className="h-10 w-10 text-blue-500" />;
-    } else if (description.includes('cloud') || description.includes('overcast')) {
-      return <CloudSunIcon className="h-10 w-10 text-gray-500" />;
-    } else {
-      return <SunIcon className="h-10 w-10 text-amber-500" />;
-    }
-  };
-
-  // Add this function to safely access nested properties
-  const getWindSpeed = (currentCondition: any) => {
-    if (!currentCondition) return null;
-    // Try to access windspeedKmph directly if it exists
-    if (currentCondition.windspeedKmph) return currentCondition.windspeedKmph;
-    // If not, check if it's in a different property structure
-    if (currentCondition.windspeed_kmph) return currentCondition.windspeed_kmph;
-    // If neither exists, return a default value
-    return null;
-  };
-
+    fetchWeather();
+  }, [countryName, cityName]);
+  
+  if (loading) {
+    return (
+      <Card className="mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Weather</CardTitle>
+          <CardDescription>Loading weather information...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Skeleton className="h-[20px] w-[250px]" />
+            <Skeleton className="h-[60px] w-full" />
+            <Skeleton className="h-[100px] w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  if (error || !weather) {
+    return (
+      <Card className="mb-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Weather</CardTitle>
+          <CardDescription>Current and forecast</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-4">
+            <div className="flex flex-col items-center text-center">
+              <AlertTriangle className="h-10 w-10 text-muted-foreground mb-2" />
+              <p className="text-muted-foreground">{error || 'No weather data available'}</p>
+              {error && (
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => window.location.reload()}>
+                  Retry
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+  
   return (
-    <Card className="overflow-hidden border border-border shadow-md hover:shadow-lg transition-shadow duration-300">
-      <CardHeader className="pb-2 border-b">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <CloudSunIcon className="h-5 w-5 text-primary" /> 
-          Weather Information
-        </CardTitle>
+    <Card className="mb-4">
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle className="text-lg">Weather</CardTitle>
+            <CardDescription>
+              {weather.location.name}, {weather.location.country}
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant={unit === 'c' ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setUnit('c')}
+              className="h-7 px-2"
+            >
+              °C
+            </Button>
+            <Button
+              variant={unit === 'f' ? "secondary" : "outline"}
+              size="sm"
+              onClick={() => setUnit('f')}
+              className="h-7 px-2"
+            >
+              °F
+            </Button>
+          </div>
+        </div>
       </CardHeader>
-      <CardContent className="p-4">
-        <form onSubmit={handleSubmit} className="mb-5 flex gap-2">
-          <Input
-            type="text"
-            placeholder={`Search for a city in ${countryName}...`}
-            value={searchCity}
-            onChange={(e) => setSearchCity(e.target.value)}
-            className="flex-grow"
-          />
-          <Button type="submit" disabled={isLoading || !searchCity.trim()}>
-            <SearchIcon className="h-4 w-4 mr-2" />
-            Search
-          </Button>
-        </form>
-
-        {isLoading ? (
-          <div className="flex flex-col space-y-4 p-4 bg-muted/20 rounded-lg">
-            <Skeleton className="h-6 w-3/4" />
-            <Skeleton className="h-10 w-1/2" />
-            <Skeleton className="h-4 w-1/3" />
-          </div>
-        ) : error ? (
-          <div className="p-4 bg-destructive/10 text-destructive rounded-lg text-center">
-            <p>{error}</p>
-            <p className="text-sm mt-2">Try searching for another city.</p>
-          </div>
-        ) : weather && displayCity ? (
-          <div className="space-y-4">
-            <div className="p-4 rounded-lg bg-background border">
-              <h4 className="font-medium mb-2 text-md">Current Weather in {displayCity}</h4>
-              
-              <div className="flex items-center">
-                <div className="mr-4">
-                  {getWeatherIcon(weather.current_condition?.[0]?.weatherDesc?.[0]?.value)}
-                </div>
-                <div>
-                  <div className="flex items-center mb-1">
-                    <ThermometerIcon className="h-4 w-4 mr-1 text-red-500" />
-                    <span className="text-2xl font-semibold">
-                      {weather.current_condition?.[0]?.temp_C || 'N/A'}°C
-                    </span>
-                  </div>
-                  <p className="text-muted-foreground">
-                    {weather.current_condition?.[0]?.weatherDesc?.[0]?.value || 'Unknown'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <div className="flex items-center">
-                  <WindIcon className="h-4 w-4 mr-2 text-blue-400" />
-                  <p className="text-sm">{getWindSpeed(weather.current_condition?.[0]) ? `${getWindSpeed(weather.current_condition?.[0])} km/h` : 'N/A'}</p>
-                </div>
-                <div className="flex items-center">
-                  <DropletIcon className="h-4 w-4 mr-2 text-blue-500" />
-                  <span className="text-sm">Humidity: {weather.current_condition?.[0]?.humidity || 'N/A'}%</span>
-                </div>
+      <CardContent>
+        <div className="mb-4">
+          <div className="flex items-center">
+            <img
+              src={`https:${weather.current.condition.icon}`}
+              alt={weather.current.condition.text}
+              className="w-16 h-16"
+            />
+            <div className="ml-2">
+              <p className="text-3xl font-bold">
+                {unit === 'c' ? `${Math.round(weather.current.temp_c)}°C` : `${Math.round(weather.current.temp_f)}°F`}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Feels like {unit === 'c' ? `${Math.round(weather.current.feelslike_c)}°C` : `${Math.round(weather.current.feelslike_f)}°F`}
+              </p>
+            </div>
+            <div className="ml-auto text-right">
+              <p className="font-medium">{weather.current.condition.text}</p>
+              <div className="flex items-center justify-end gap-2 mt-1">
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Wind className="h-3 w-3" />
+                  <span>{weather.current.wind_kph} km/h</span>
+                </Badge>
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Droplets className="h-3 w-3" />
+                  <span>{weather.current.humidity}%</span>
+                </Badge>
               </div>
             </div>
-
-            {weather.weather && weather.weather.length > 0 && (
-              <div>
-                <h4 className="font-medium mb-2 text-md">3-Day Forecast</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  {weather.weather.slice(0, 3).map((day, index) => (
-                    <div key={index} className="p-3 rounded-md border bg-background/50 hover:bg-background/80 transition-colors">
-                      <p className="font-medium text-sm">{day.date || `Day ${index + 1}`}</p>
-                      <div className="flex items-center mt-1">
-                        {getWeatherIcon(day.hourly?.[4]?.weatherDesc?.[0]?.value)}
-                        <div className="ml-2">
-                          <p className="font-semibold">{day.avgtempC}°C</p>
-                          <p className="text-xs text-muted-foreground">
-                            {day.hourly?.[4]?.weatherDesc?.[0]?.value || 'Unknown'}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+          </div>
+        </div>
+        
+        <div className="border-t pt-3">
+          <p className="font-medium mb-2">3-Day Forecast</p>
+          <div className="grid grid-cols-3 gap-2">
+            {weather.forecast.forecastday.map((day, i) => (
+              <div
+                key={day.date}
+                className="flex flex-col items-center border rounded-md p-2 text-center"
+              >
+                <p className="text-xs font-medium">
+                  {i === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
+                </p>
+                <img
+                  src={`https:${day.day.condition.icon}`}
+                  alt={day.day.condition.text}
+                  className="w-10 h-10 my-1"
+                />
+                <div className="text-xs">
+                  <div className="font-medium">
+                    {unit === 'c'
+                      ? `${Math.round(day.day.maxtemp_c)}° / ${Math.round(day.day.mintemp_c)}°`
+                      : `${Math.round(day.day.maxtemp_f)}° / ${Math.round(day.day.mintemp_f)}°`}
+                  </div>
+                  <div className="flex items-center justify-center gap-1 mt-1">
+                    <CloudRain className="h-3 w-3" />
+                    <span>{day.day.daily_chance_of_rain}%</span>
+                  </div>
                 </div>
               </div>
-            )}
-            
-            <p className="text-xs text-muted-foreground text-center">Weather data from wttr.in</p>
+            ))}
           </div>
-        ) : (
-          <div className="text-center p-6 bg-muted/20 rounded-lg">
-            <CloudSunIcon className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-muted-foreground">Search for a city to see weather information</p>
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

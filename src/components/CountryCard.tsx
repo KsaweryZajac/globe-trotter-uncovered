@@ -17,6 +17,11 @@ const injectFlagStyles = () => {
         max-height: 120px !important;
         object-fit: contain !important;
       }
+      
+      /* Make flags even smaller in search results */
+      .search-results .country-card img.flag-image {
+        max-height: 80px !important;
+      }
     `;
     document.head.appendChild(style);
   }
@@ -25,7 +30,11 @@ const injectFlagStyles = () => {
 // Execute immediately when this component loads
 injectFlagStyles();
 
-const SmallerFlagWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface SmallerFlagWrapperProps {
+  children: React.ReactNode;
+}
+
+const SmallerFlagWrapper: React.FC<SmallerFlagWrapperProps> = ({ children }) => {
   // Apply the custom class to the wrapper
   return <div className="country-card">{children}</div>;
 };
