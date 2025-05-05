@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,9 +49,10 @@ interface Weather {
 interface WeatherDisplayProps {
   countryName: string;
   cityName?: string;
+  capital?: string;  // Add capital as an alternative to cityName
 }
 
-const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName }) => {
+const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, capital }) => {
   const [weather, setWeather] = useState<Weather | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +70,8 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName }
         setLoading(true);
         setError(null);
         
-        const location = cityName || countryName;
+        // Use cityName, capital, or fall back to countryName
+        const location = cityName || capital || countryName;
         const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=d76c9971c6cd40dbaa692245232007&q=${location}&days=3&aqi=no&alerts=no`);
         
         if (!response.ok) {
@@ -88,7 +89,7 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName }
     };
     
     fetchWeather();
-  }, [countryName, cityName]);
+  }, [countryName, cityName, capital]);
   
   if (loading) {
     return (

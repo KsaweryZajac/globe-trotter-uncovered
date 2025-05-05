@@ -103,8 +103,8 @@ const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
               zoom={2} // Default zoom
               style={{ height: '100%', width: '100%' }}
             >
-              {/* Fixed: Wrapped MapController in a function to satisfy Context.Consumer requirements */}
-              {() => <MapController points={mapPoints} />}
+              {/* Fixed: Properly render MapController as a component */}
+              <MapController points={mapPoints} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

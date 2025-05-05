@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Country, NewsArticle, Weather } from '@/services/api';
@@ -7,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import CountryCard from '@/components/CountryCard';
+import CountryCard from '@/components/CountryCard'; 
 import api from '@/services/api';
 import { useToast } from '@/components/ui/use-toast';
 
