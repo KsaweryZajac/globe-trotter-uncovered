@@ -1,4 +1,3 @@
-
 // Define Points of Interest type
 export interface PointOfInterest {
   id: string;
@@ -110,12 +109,25 @@ const getPointsOfInterest = async (city: string, country: string): Promise<Point
 };
 
 const calculateTripCost = (country: string, duration: number = 7) => {
-  // In a real app, this would use real data based on the country's cost of living
+  // Use fixed prices based on country region to make costs consistent
+  const getRegionMultiplier = (countryName: string) => {
+    const westernCountries = ['United States', 'Canada', 'United Kingdom', 'Australia', 'New Zealand', 'Germany', 'France', 'Italy', 'Spain', 'Japan'];
+    const asianCountries = ['China', 'India', 'Thailand', 'Vietnam', 'Indonesia', 'Malaysia', 'Philippines', 'Singapore', 'South Korea'];
+    const latinAmericanCountries = ['Mexico', 'Brazil', 'Argentina', 'Colombia', 'Peru', 'Chile', 'Ecuador', 'Cuba', 'Costa Rica'];
+    
+    if (westernCountries.includes(countryName)) return 1.5;
+    if (asianCountries.includes(countryName)) return 0.8;
+    if (latinAmericanCountries.includes(countryName)) return 0.7;
+    return 1.0; // Default multiplier
+  };
+  
+  const multiplier = getRegionMultiplier(country);
+  
   const costs = {
-    flights: Math.round(500 + Math.random() * 1000),
-    lodging: Math.round(duration * (80 + Math.random() * 200)),
-    food: Math.round(duration * (30 + Math.random() * 70)),
-    activities: Math.round(duration * (20 + Math.random() * 50))
+    flights: Math.round(800 * multiplier),
+    lodging: Math.round(duration * (100 * multiplier)),
+    food: Math.round(duration * (50 * multiplier)),
+    activities: Math.round(duration * (30 * multiplier))
   };
   
   return costs;

@@ -37,7 +37,6 @@ const mockTrips = [
 
 const TripPlanner = () => {
   const [activeTab, setActiveTab] = useState("newTrip");
-  // Update the trip state to match the Trip interface from TripForm
   const [trip, setTrip] = useState<Trip>({
     id: '',
     title: '',
@@ -66,9 +65,10 @@ const TripPlanner = () => {
   const createNewTrip = (newTrip: Trip) => {
     // Logic to save the new trip
     console.log('New trip created:', newTrip);
-    setTrip(newTrip);
-    setSelectedTrip(newTrip);
-    setTrips([...trips, { ...newTrip, id: Date.now().toString() }]);
+    const tripWithId = { ...newTrip, id: Date.now().toString() };
+    setTrip(tripWithId);
+    setSelectedTrip(tripWithId);
+    setTrips([...trips, tripWithId]);
   };
 
   const selectTrip = (trip: Trip) => {
@@ -87,6 +87,9 @@ const TripPlanner = () => {
 
   // Create empty destinations array with proper type for initial state
   const emptyDestinations: TripFormDestination[] = [];
+
+  // Add media query for responsive design
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
@@ -170,7 +173,7 @@ const TripPlanner = () => {
                         Explore your destination on the map
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="overflow-hidden max-h-[350px]">
                       <TripMap destinations={selectedTrip?.destinations || emptyDestinations} />
                     </CardContent>
                   </Card>
@@ -196,7 +199,7 @@ const TripPlanner = () => {
                         View photos of your destination
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="overflow-auto max-h-[350px]">
                       <TripGallery destinations={selectedTrip?.destinations || emptyDestinations} />
                     </CardContent>
                   </Card>
@@ -222,7 +225,7 @@ const TripPlanner = () => {
                         Estimate the cost of your trip
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="overflow-auto max-h-[350px]">
                       {selectedTrip ? (
                         <TripCostEstimate 
                           destinations={selectedTrip.destinations} 
@@ -259,7 +262,7 @@ const TripPlanner = () => {
                         Export your trip details
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="overflow-auto max-h-[350px]">
                       <TripExport trip={selectedTrip} />
                     </CardContent>
                   </Card>

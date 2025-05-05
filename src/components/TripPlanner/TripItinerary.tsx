@@ -58,7 +58,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
   });
 
   return (
-    <Card>
+    <Card className="overflow-auto max-h-[70vh] md:max-h-[60vh]">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">Trip Itinerary</CardTitle>
       </CardHeader>
@@ -78,7 +78,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
                   {day.destinations.map((dest, index) => (
                     <div key={index} className="space-y-2">
                       <div className="flex items-center">
-                        <MapPinIcon className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <MapPinIcon className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
                         <h4 className="font-medium">{dest.city}, {dest.country.name.common}</h4>
                       </div>
                       
@@ -86,8 +86,8 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
                         <div className="ml-6 space-y-2">
                           {dest.selectedPOIs.map((poi, poiIndex) => (
                             <div key={poi.id} className="flex">
-                              <ClockIcon className="h-4 w-4 mr-2 text-muted-foreground" />
-                              <div>
+                              <ClockIcon className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
+                              <div className="flex-1">
                                 <p className="text-sm">{poi.name}</p>
                                 <p className="text-xs text-muted-foreground">
                                   {poi.description?.substring(0, 60)}

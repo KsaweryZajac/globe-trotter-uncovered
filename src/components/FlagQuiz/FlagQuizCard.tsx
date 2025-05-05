@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,21 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
   useEffect(() => {
     loadQuestions();
   }, []);
+  
+  // Auto advance to next question after correct answer
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
+    if (isCorrect === true) {
+      timeoutId = setTimeout(() => {
+        nextQuestion();
+      }, 1000); // Auto advance after 1 second
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isCorrect]);
 
   const loadQuestions = async () => {
     setLoading(true);
@@ -55,10 +71,7 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
     if (correct) {
       setScore(score + 1);
       setStreak(streak + 1);
-      toast({
-        title: "Correct!",
-        description: "+1 point",
-      });
+      // We'll only show a toast for incorrect answers now
     } else {
       setStreak(0);
       toast({
@@ -146,11 +159,11 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
               className="flex flex-col space-y-4"
             >
               <div className="flex justify-center">
-                {!flagLoaded && <Skeleton className="w-64 h-40 rounded-md absolute" />}
+                {!flagLoaded && <Skeleton className="w-60 h-40 rounded-md absolute" />}
                 <img
                   src={currentQuestion.flag}
                   alt="Flag"
-                  className={`w-64 h-40 object-cover rounded-md transition-opacity duration-300 ${flagLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  className={`w-60 h-36 object-contain rounded-md transition-opacity duration-300 ${flagLoaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={handleImageLoad}
                 />
               </div>
@@ -168,7 +181,7 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
                   </Button>
                 ))}
               </div>
-              {isCorrect !== null && (
+              {isCorrect === false && (
                 <motion.div
                   variants={buttonVariants}
                   initial="hidden"

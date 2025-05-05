@@ -1,4 +1,3 @@
-
 import axios from 'axios';
 import { Country } from './api';
 
@@ -52,9 +51,8 @@ const API_BASE_URL = 'https://api.example.com/flag-quiz';
 // Function to get flag quiz questions
 export const getFlagQuiz = async () => {
   try {
-    // In a real implementation, we'd fetch from an API
-    // For now, we'll return a mock quiz with a few countries
-    return [
+    // All available quiz questions
+    const allQuizQuestions = [
       {
         flag: "https://flagcdn.com/w320/us.png",
         options: ["United States", "Canada", "United Kingdom", "Australia"],
@@ -79,8 +77,45 @@ export const getFlagQuiz = async () => {
         flag: "https://flagcdn.com/w320/za.png",
         options: ["Nigeria", "Kenya", "South Africa", "Egypt"],
         correctAnswer: "South Africa"
+      },
+      {
+        flag: "https://flagcdn.com/w320/au.png",
+        options: ["New Zealand", "Australia", "United Kingdom", "Canada"],
+        correctAnswer: "Australia"
+      },
+      {
+        flag: "https://flagcdn.com/w320/de.png",
+        options: ["France", "Belgium", "Germany", "Netherlands"],
+        correctAnswer: "Germany"
+      },
+      {
+        flag: "https://flagcdn.com/w320/ca.png",
+        options: ["United States", "Canada", "Iceland", "Norway"],
+        correctAnswer: "Canada"
+      },
+      {
+        flag: "https://flagcdn.com/w320/in.png",
+        options: ["Pakistan", "Bangladesh", "India", "Sri Lanka"],
+        correctAnswer: "India"
+      },
+      {
+        flag: "https://flagcdn.com/w320/mx.png",
+        options: ["Spain", "Italy", "Mexico", "Colombia"],
+        correctAnswer: "Mexico"
       }
     ];
+    
+    // Shuffle the questions
+    const shuffleArray = (array: any[]) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
+    
+    return shuffleArray(allQuizQuestions).slice(0, 5); // Return 5 random questions
   } catch (error) {
     console.error("Error fetching flag quiz:", error);
     throw new Error("Failed to fetch flag quiz questions");
