@@ -12,7 +12,7 @@ import TripMap from '@/components/TripPlanner/TripMap';
 import TripGallery from '@/components/TripPlanner/TripGallery';
 import TripCostEstimate from '@/components/TripPlanner/TripCostEstimate';
 import TripExport from '@/components/TripPlanner/TripExport';
-import { getAllCountries } from '@/services/api';
+import api from '@/services/api'; // Import the default export instead of named export
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -40,10 +40,10 @@ const TripPlanner = () => {
   const [trips, setTrips] = useState<Trip[]>([]);
   const [isEditingTrip, setIsEditingTrip] = useState(false);
 
-  // Fetch countries
+  // Fetch countries using the default exported API object
   const { data: countries = [] } = useQuery({
     queryKey: ['countries'],
-    queryFn: getAllCountries
+    queryFn: api.getAllCountries
   });
 
   // Load saved trips from localStorage
