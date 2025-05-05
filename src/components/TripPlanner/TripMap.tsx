@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -33,7 +33,7 @@ interface MapPoint {
 
 // Create a MapController component to handle map interactions
 // This separates the map control logic from the rendering
-const MapController = ({ points }: { points: MapPoint[] }) => {
+const MapController: React.FC<{ points: MapPoint[] }> = ({ points }) => {
   const map = useMap();
   
   useEffect(() => {
@@ -103,7 +103,6 @@ const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
               zoom={2} // Default zoom
               style={{ height: '100%', width: '100%' }}
             >
-              {/* Fixed: Properly render MapController as a component */}
               <MapController points={mapPoints} />
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
