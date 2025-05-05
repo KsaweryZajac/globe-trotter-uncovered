@@ -6,10 +6,28 @@ import { CalendarIcon, MapPinIcon, ClockIcon } from 'lucide-react';
 import { Trip, TripDestination } from './TripForm';
 
 interface TripItineraryProps {
-  trip: Trip;
+  trip: Trip | null;
 }
 
 const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
+  // If no trip is selected, show a placeholder
+  if (!trip) {
+    return (
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-lg">Trip Itinerary</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center p-6 text-center">
+            <p className="text-muted-foreground">
+              No trip selected. Please create or select a trip to view the itinerary.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Calculate trip duration
   const startDate = parseISO(trip.startDate);
   const endDate = parseISO(trip.endDate);
