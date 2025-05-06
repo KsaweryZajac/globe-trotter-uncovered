@@ -30,8 +30,8 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
     const fetchImages = async () => {
       setLoading(true);
       try {
-        // Use Pexels API with the provided API key
-        const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(country)}&per_page=${numberOfImages}&size=medium`, {
+        // Use Pexels API with landscape focus and excluding people
+        const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(country)}+landscape+nature+-people&per_page=${numberOfImages}&orientation=landscape`, {
           headers: {
             Authorization: 'jEYY0FYmW1VakicDe2EOkxo19GbNNrufNNZ40KiSCWnVg1291swHRaDA'
           }
