@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import { MapIcon } from 'lucide-react';
@@ -11,16 +11,32 @@ interface CountryBorderMapProps {
 
 const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryName, countryCode }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapUrl, setMapUrl] = useState('');
   
-  // Using open-source OpenStreetMap for map display
-  const mapUrl = countryCode ? 
-    `https://nominatim.openstreetmap.org/ui/search.html?country=${encodeURIComponent(countryCode)}` : 
-    `https://nominatim.openstreetmap.org/ui/search.html?q=${encodeURIComponent(countryName)}`;
+  // Create a clean version of the country name for the map
+  const cleanCountryName = countryName.replace(/[^\w\s]/gi, '').trim();
   
-  // If we don't have a country code, use the country name for the map
-  const mapParam = countryCode ? 
-    `area=${countryCode.toLowerCase()}` : 
-    `text=${encodeURIComponent(countryName)}`;
+  // Initialize the map URL when the component mounts or country changes
+  useEffect(() => {
+    // Using dedicated OpenStreetMap export service
+    const baseUrl = 'https://www.openstreetmap.org/export/embed.html';
+    
+    // Construct query parameters - try to use code or name
+    let queryParams;
+    if (countryCode) {
+      queryParams = `?bbox=-180,-85,180,85&layer=mapnik&marker=0,0&relation=${countryCode.toLowerCase()}`;
+    } else {
+      // If no country code available, use name-based search
+      queryParams = `?bbox=-180,-85,180,85&layer=mapnik&query=${encodeURIComponent(cleanCountryName)}`;
+    }
+    
+    setMapUrl(`${baseUrl}${queryParams}`);
+  }, [countryName, countryCode, cleanCountryName]);
+
+  // Create a full view URL for the "View interactive map" link
+  const viewMapUrl = countryCode ? 
+    `https://www.openstreetmap.org/relation/${countryCode.toLowerCase()}` : 
+    `https://www.openstreetmap.org/search?query=${encodeURIComponent(cleanCountryName)}`;
   
   return (
     <Card className="p-4 mt-4 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
@@ -28,23 +44,26 @@ const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryName, countr
         <MapIcon className="h-5 w-5 text-primary mr-2" />
         Country Map
       </h3>
-      <div className="relative rounded-md overflow-hidden aspect-[16/9]">
+      <div className="relative rounded-md overflow-hidden aspect-[16/9] border">
         {!mapLoaded && (
           <Skeleton className="absolute inset-0 w-full h-full" />
         )}
-        <img 
-          src={`https://maps.geoapify.com/v1/staticmap?style=osm-carto&width=600&height=400&center=lonlat:0,0;auto&zoom=auto&marker=lonlat:0,0;type:awesome;color:%23ff0000;icontype:awesome&apiKey=15c128aec18940f195c1df47d62d7548&${mapParam}`}
-          alt={`Map of ${countryName}`}
-          className={`w-full h-full object-cover border rounded-md transition-opacity duration-300 ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}
+        <iframe 
+          src={mapUrl}
+          width="100%" 
+          height="100%" 
+          frameBorder="0" 
+          title={`Map of ${countryName}`}
+          className={`w-full h-full transition-opacity duration-300 ${mapLoaded ? 'opacity-100' : 'opacity-0'}`}
           onLoad={() => setMapLoaded(true)}
-          onError={() => setMapLoaded(true)} // Handle errors gracefully
           loading="lazy"
+          referrerPolicy="no-referrer"
         />
       </div>
       <div className="mt-2 flex justify-between items-center">
         <p className="text-xs text-muted-foreground">Map data from OpenStreetMap</p>
         <a 
-          href={mapUrl} 
+          href={viewMapUrl} 
           target="_blank" 
           rel="noopener noreferrer" 
           className="text-xs text-primary hover:underline flex items-center"

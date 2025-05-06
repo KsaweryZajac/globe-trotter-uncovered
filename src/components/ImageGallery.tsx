@@ -8,27 +8,55 @@ interface ImageGalleryProps {
   numberOfImages?: number;
 }
 
+interface PexelsPhoto {
+  id: number;
+  src: {
+    medium: string;
+    large: string;
+  };
+  alt: string;
+  photographer: string;
+}
+
 const ImageGallery: React.FC<ImageGalleryProps> = ({ 
   country, 
   numberOfImages = 5 
 }) => {
   const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({});
-  const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imageUrls, setImageUrls] = useState<PexelsPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     const fetchImages = async () => {
       setLoading(true);
       try {
-        // Using Unsplash Source API which doesn't require authentication
-        // Adding a timestamp to prevent caching and get different images
-        const urls = Array.from({ length: numberOfImages }).map((_, index) => 
-          `https://source.unsplash.com/featured/800x600?${encodeURIComponent(country)}&sig=${Date.now() + index}`
-        );
-        setImageUrls(urls);
+        // Use Pexels API with the provided API key
+        const response = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(country)}&per_page=${numberOfImages}&size=medium`, {
+          headers: {
+            Authorization: 'jEYY0FYmW1VakicDe2EOkxo19GbNNrufNNZ40KiSCWnVg1291swHRaDA'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch images from Pexels');
+        }
+        
+        const data = await response.json();
+        setImageUrls(data.photos || []);
       } catch (error) {
         console.error('Failed to fetch images:', error);
         toast.error('Failed to load country images');
+        // Fallback to placeholder images if the API fails
+        const fallbackImages = Array.from({ length: numberOfImages }).map((_, index) => ({
+          id: index,
+          src: {
+            medium: `https://via.placeholder.com/400x300?text=${encodeURIComponent(country)}+Image+${index+1}`,
+            large: `https://via.placeholder.com/800x600?text=${encodeURIComponent(country)}+Image+${index+1}`
+          },
+          alt: `Placeholder for ${country}`,
+          photographer: 'Placeholder'
+        }));
+        setImageUrls(fallbackImages);
       } finally {
         setLoading(false);
       }
@@ -55,20 +83,20 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
           ))}
         </div> :
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
-          {imageUrls.map((url, index) => (
-            <div key={index} className="relative rounded-md overflow-hidden aspect-[4/3] group">
+          {imageUrls.map((photo, index) => (
+            <div key={photo.id} className="relative rounded-md overflow-hidden aspect-[4/3] group">
               {!loadedImages[index] && (
                 <Skeleton className="absolute inset-0 w-full h-full" />
               )}
               <img
-                src={url}
-                alt={`Image ${index + 1} of ${country}`}
+                src={photo.src.medium}
+                alt={photo.alt || `Image of ${country}`}
                 className={`w-full h-full object-cover transition-all duration-500 ${loadedImages[index] ? 'opacity-100' : 'opacity-0'} group-hover:scale-105`}
                 onLoad={() => handleImageLoaded(index)}
                 onError={(e) => {
                   // Fallback to a placeholder if the image fails to load
                   const target = e.target as HTMLImageElement;
-                  target.src = `https://via.placeholder.com/800x600?text=${encodeURIComponent(country)}+${index+1}`;
+                  target.src = `https://via.placeholder.com/400x300?text=${encodeURIComponent(country)}+${index+1}`;
                   handleImageLoaded(index);
                 }}
                 loading="lazy"
@@ -78,7 +106,7 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
           ))}
         </div>
       }
-      <p className="text-xs text-muted-foreground mt-2 text-right">Images from Unsplash</p>
+      <p className="text-xs text-muted-foreground mt-2 text-right">Images from Pexels</p>
     </div>
   );
 };

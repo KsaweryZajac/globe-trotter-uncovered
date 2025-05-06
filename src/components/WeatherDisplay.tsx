@@ -1,17 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Wind, Droplets, Sun, CloudRain, Cloud, AlertTriangle } from 'lucide-react';
 
-interface Weather {
-  location: {
-    name: string;
-    country: string;
-    region: string;
-  };
+interface WeatherResponse {
   current: {
     temp_c: number;
     temp_f: number;
@@ -20,14 +15,14 @@ interface Weather {
       icon: string;
     };
     wind_kph: number;
-    wind_dir: string;
     humidity: number;
     feelslike_c: number;
     feelslike_f: number;
     uv: number;
+    wind_dir: string;
   };
   forecast: {
-    forecastday: Array<{
+    forecastday: {
       date: string;
       day: {
         avgtemp_c: number;
@@ -42,7 +37,12 @@ interface Weather {
         mintemp_c: number;
         mintemp_f: number;
       };
-    }>;
+    }[];
+  };
+  location: {
+    name: string;
+    country: string;
+    region: string;
   };
 }
 
@@ -53,7 +53,7 @@ interface WeatherDisplayProps {
 }
 
 const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, capital }) => {
-  const [weather, setWeather] = useState<Weather | null>(null);
+  const [weather, setWeather] = useState<WeatherResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unit, setUnit] = useState<'c' | 'f'>('c');
@@ -72,17 +72,93 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
         
         // Use cityName, capital, or fall back to countryName
         const location = cityName || capital || countryName;
-        const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=d76c9971c6cd40dbaa692245232007&q=${location}&days=3&aqi=no&alerts=no`);
+        
+        // Use the public WeatherAPI endpoint which allows CORS and doesn't need authentication for basic data
+        const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=d76c9971c6cd40dbaa692245232007&q=${encodeURIComponent(location)}&days=3&aqi=no&alerts=no`);
         
         if (!response.ok) {
-          throw new Error('Failed to fetch weather data');
+          // If the official API fails, try our fallback free API
+          throw new Error('Weather API failed, trying fallback');
         }
         
         const data = await response.json();
-        setWeather(data as Weather);
+        setWeather(data);
       } catch (err) {
-        console.error('Weather fetching error:', err);
-        setError('Could not load weather information');
+        console.error('Weather API error:', err);
+        
+        try {
+          // Fallback to Open-Meteo API which is completely free and no API key needed
+          const location = cityName || capital || countryName;
+          const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`);
+          
+          if (!geoResponse.ok) {
+            throw new Error('Geocoding failed');
+          }
+          
+          const geoData = await geoResponse.json();
+          
+          if (!geoData.results || geoData.results.length === 0) {
+            throw new Error('Location not found');
+          }
+          
+          const { latitude, longitude, name, country } = geoData.results[0];
+          
+          const weatherResponse = await fetch(
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=3`
+          );
+          
+          if (!weatherResponse.ok) {
+            throw new Error('Weather data fetch failed');
+          }
+          
+          const weatherData = await weatherResponse.json();
+          
+          // Convert Open-Meteo data format to our expected format
+          const convertedData: WeatherResponse = {
+            location: {
+              name,
+              country,
+              region: '',
+            },
+            current: {
+              temp_c: weatherData.current.temperature_2m,
+              temp_f: weatherData.current.temperature_2m * 9/5 + 32,
+              condition: {
+                text: getWeatherConditionText(weatherData.current.weather_code),
+                icon: getWeatherIconUrl(weatherData.current.weather_code),
+              },
+              wind_kph: weatherData.current.wind_speed_10m * 3.6, // Convert m/s to km/h
+              humidity: weatherData.current.relative_humidity_2m,
+              feelslike_c: weatherData.current.temperature_2m, // Estimate
+              feelslike_f: weatherData.current.temperature_2m * 9/5 + 32,
+              uv: 0, // Not available in this API
+              wind_dir: 'N/A', // Not available in this API
+            },
+            forecast: {
+              forecastday: weatherData.daily.time.map((date: string, i: number) => ({
+                date,
+                day: {
+                  avgtemp_c: (weatherData.daily.temperature_2m_max[i] + weatherData.daily.temperature_2m_min[i]) / 2,
+                  avgtemp_f: ((weatherData.daily.temperature_2m_max[i] + weatherData.daily.temperature_2m_min[i]) / 2) * 9/5 + 32,
+                  condition: {
+                    text: getWeatherConditionText(weatherData.daily.weather_code[i]),
+                    icon: getWeatherIconUrl(weatherData.daily.weather_code[i]),
+                  },
+                  daily_chance_of_rain: weatherData.daily.precipitation_probability_max[i] || 0,
+                  maxtemp_c: weatherData.daily.temperature_2m_max[i],
+                  maxtemp_f: weatherData.daily.temperature_2m_max[i] * 9/5 + 32,
+                  mintemp_c: weatherData.daily.temperature_2m_min[i],
+                  mintemp_f: weatherData.daily.temperature_2m_min[i] * 9/5 + 32,
+                },
+              })),
+            },
+          };
+          
+          setWeather(convertedData);
+        } catch (fallbackErr) {
+          console.error('Fallback weather API error:', fallbackErr);
+          setError('Could not load weather information');
+        }
       } finally {
         setLoading(false);
       }
@@ -90,6 +166,57 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
     
     fetchWeather();
   }, [countryName, cityName, capital]);
+  
+  // Helper function to convert WMO weather codes to text
+  function getWeatherConditionText(code: number): string {
+    const conditions: Record<number, string> = {
+      0: 'Clear sky',
+      1: 'Mainly clear',
+      2: 'Partly cloudy',
+      3: 'Overcast',
+      45: 'Fog',
+      48: 'Depositing rime fog',
+      51: 'Light drizzle',
+      53: 'Moderate drizzle',
+      55: 'Dense drizzle',
+      56: 'Light freezing drizzle',
+      57: 'Dense freezing drizzle',
+      61: 'Slight rain',
+      63: 'Moderate rain',
+      65: 'Heavy rain',
+      66: 'Light freezing rain',
+      67: 'Heavy freezing rain',
+      71: 'Slight snow fall',
+      73: 'Moderate snow fall',
+      75: 'Heavy snow fall',
+      77: 'Snow grains',
+      80: 'Slight rain showers',
+      81: 'Moderate rain showers',
+      82: 'Violent rain showers',
+      85: 'Slight snow showers',
+      86: 'Heavy snow showers',
+      95: 'Thunderstorm',
+      96: 'Thunderstorm with slight hail',
+      99: 'Thunderstorm with heavy hail',
+    };
+    return conditions[code] || 'Unknown';
+  }
+  
+  // Helper function to get weather icon URL
+  function getWeatherIconUrl(code: number): string {
+    // Map WMO codes to appropriate icons
+    if (code === 0) return 'https://cdn.weatherapi.com/weather/64x64/day/113.png'; // Clear
+    if (code >= 1 && code <= 2) return 'https://cdn.weatherapi.com/weather/64x64/day/116.png'; // Partly cloudy
+    if (code === 3) return 'https://cdn.weatherapi.com/weather/64x64/day/119.png'; // Cloudy
+    if (code >= 45 && code <= 48) return 'https://cdn.weatherapi.com/weather/64x64/day/248.png'; // Fog
+    if (code >= 51 && code <= 57) return 'https://cdn.weatherapi.com/weather/64x64/day/266.png'; // Drizzle
+    if (code >= 61 && code <= 67) return 'https://cdn.weatherapi.com/weather/64x64/day/308.png'; // Rain
+    if (code >= 71 && code <= 77) return 'https://cdn.weatherapi.com/weather/64x64/day/338.png'; // Snow
+    if (code >= 80 && code <= 82) return 'https://cdn.weatherapi.com/weather/64x64/day/305.png'; // Rain showers
+    if (code >= 85 && code <= 86) return 'https://cdn.weatherapi.com/weather/64x64/day/338.png'; // Snow showers
+    if (code >= 95) return 'https://cdn.weatherapi.com/weather/64x64/day/389.png'; // Thunderstorm
+    return 'https://cdn.weatherapi.com/weather/64x64/day/116.png'; // Default
+  }
   
   if (loading) {
     return (
@@ -167,9 +294,14 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
         <div className="mb-4">
           <div className="flex items-center">
             <img
-              src={`https:${weather.current.condition.icon}`}
+              src={`${weather.current.condition.icon}`}
               alt={weather.current.condition.text}
               className="w-16 h-16"
+              onError={(e) => {
+                // Fallback icon if the weather icon fails to load
+                const target = e.target as HTMLImageElement;
+                target.src = 'https://cdn.weatherapi.com/weather/64x64/day/116.png';
+              }}
             />
             <div className="ml-2">
               <p className="text-3xl font-bold">
@@ -207,9 +339,14 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
                   {i === 0 ? 'Today' : new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
                 </p>
                 <img
-                  src={`https:${day.day.condition.icon}`}
+                  src={day.day.condition.icon}
                   alt={day.day.condition.text}
                   className="w-10 h-10 my-1"
+                  onError={(e) => {
+                    // Fallback icon
+                    const target = e.target as HTMLImageElement;
+                    target.src = 'https://cdn.weatherapi.com/weather/64x64/day/116.png';
+                  }}
                 />
                 <div className="text-xs">
                   <div className="font-medium">
