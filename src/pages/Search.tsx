@@ -12,7 +12,7 @@ import CelebritiesSection from "@/components/CountryEnrichment/CelebritiesSectio
 import CulinarySection from "@/components/CountryEnrichment/CulinarySection";
 import ImageGallery from "@/components/ImageGallery";
 import { Button } from "@/components/ui/button";
-import { Globe, RefreshCcw, Search as SearchIcon } from "lucide-react";
+import { Globe, RefreshCcw } from "lucide-react";
 import api, { Country, NewsArticle, Weather } from "@/services/api";
 import { toast } from "sonner";
 
@@ -123,6 +123,7 @@ const Search = () => {
       const result = await api.getCountryByName(searchTerm);
       if (result) {
         setCountry(result);
+        toast.success(`Found information about ${result.name.common}`);
       } else {
         setError(`No country found matching "${searchTerm}"`);
         toast.error(`No country found matching "${searchTerm}"`);
@@ -265,10 +266,12 @@ const Search = () => {
                   country={country}
                   loading={loading}
                   error={error}
-                  onExploreClick={() => {}}
-                  news={news} 
-                  weather={weather} 
-                  translation={translation}
+                  onExploreClick={() => {
+                    const section = document.getElementById('country-details');
+                    if (section) {
+                      section.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
                   onAddToFavorites={handleAddToFavorites}
                   isFavorite={isFavorite}
                   newsLoading={newsLoading}
@@ -277,11 +280,11 @@ const Search = () => {
                   newsError={newsError}
                   weatherError={weatherError}
                   translationError={translationError}
-                  onTranslate={handleTranslate}
-                  onCitySearch={handleCitySearch}
                 />
               </div>
             </motion.div>
+
+            <div id="country-details"></div>
 
             <motion.div variants={itemAnimation}>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
