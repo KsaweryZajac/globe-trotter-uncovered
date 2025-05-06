@@ -2,7 +2,7 @@
 import { NewsArticle } from "@/services/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Globe } from "lucide-react";
 
 interface NewsSectionProps {
   news: NewsArticle[];
@@ -44,10 +44,13 @@ const NewsSection = ({ news, isLoading, error, countryName }: NewsSectionProps) 
   };
 
   return (
-    <Card className="shadow-sm">
+    <Card className="shadow-md">
       <CardHeader>
-        <CardTitle className="text-lg">Latest News about {countryName}</CardTitle>
-        <CardDescription>Recent articles related to {countryName}</CardDescription>
+        <CardTitle className="text-xl flex items-center gap-2">
+          <Globe className="h-5 w-5 text-primary" />
+          Latest News about {countryName}
+        </CardTitle>
+        <CardDescription>Recent articles and updates from {countryName}</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -64,7 +67,7 @@ const NewsSection = ({ news, isLoading, error, countryName }: NewsSectionProps) 
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-4">
+          <div className="text-center py-4 border border-muted rounded-lg">
             <div className="text-destructive">{error}</div>
           </div>
         ) : news && news.length > 0 ? (
@@ -109,7 +112,7 @@ const NewsSection = ({ news, isLoading, error, countryName }: NewsSectionProps) 
             ))}
           </ul>
         ) : (
-          <div className="text-center py-4">
+          <div className="text-center py-8 border border-muted rounded-lg">
             <div className="text-muted-foreground">No news articles found for {countryName}.</div>
           </div>
         )}

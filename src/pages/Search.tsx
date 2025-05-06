@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Header from '@/components/Header';
@@ -12,7 +13,9 @@ import CelebritiesSection from "@/components/CountryEnrichment/CelebritiesSectio
 import CulinarySection from "@/components/CountryEnrichment/CulinarySection";
 import ImageGallery from "@/components/ImageGallery";
 import { Button } from "@/components/ui/button";
-import { Globe, RefreshCcw } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Globe, RefreshCcw, MapPin, Users, Landmark, Flag } from "lucide-react";
 import api, { Country, NewsArticle, Weather } from "@/services/api";
 import { toast } from "sonner";
 
@@ -32,6 +35,7 @@ const Search = () => {
   const [newsError, setNewsError] = useState<string | null>(null);
   const [weatherError, setWeatherError] = useState<string | null>(null);
   const [translationError, setTranslationError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
 
   // Load favorites from localStorage
   useEffect(() => {
@@ -118,6 +122,7 @@ const Search = () => {
     setNews([]);
     setWeather(null);
     setTranslation(null);
+    setActiveTab("overview");
 
     try {
       const result = await api.getCountryByName(searchTerm);
@@ -143,6 +148,7 @@ const Search = () => {
     setNews([]);
     setWeather(null);
     setTranslation(null);
+    setActiveTab("overview");
 
     try {
       const randomCountry = await api.getRandomCountry();
@@ -183,10 +189,6 @@ const Search = () => {
     localStorage.setItem('favoriteCountries', JSON.stringify(updatedFavorites));
   };
 
-  const handleCitySearch = (city: string) => {
-    fetchWeather(city);
-  };
-
   const isFavorite = country ? favorites.some(fav => fav.cca3 === country.cca3) : false;
 
   // Animation variants
@@ -195,7 +197,7 @@ const Search = () => {
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2
+        staggerChildren: 0.1
       }
     }
   };
@@ -205,22 +207,45 @@ const Search = () => {
     show: { opacity: 1, y: 0 }
   };
 
+  // Format population with commas
+  const formattedPopulation = country?.population?.toLocaleString() || 'N/A';
+  
+  // Get area if available
+  const area = country?.area ? `${country.area.toLocaleString()} km²` : 'N/A';
+
+  // Calculate languages
+  const languages = country?.languages 
+    ? Object.values(country.languages).join(', ')
+    : 'N/A';
+
+  // Get currency info
+  let currencyInfo = 'N/A';
+  if (country?.currencies) {
+    const currencyCodes = Object.keys(country.currencies);
+    if (currencyCodes.length > 0) {
+      currencyInfo = currencyCodes.map(code => {
+        const curr = country.currencies[code];
+        return `${curr.name} (${curr.symbol || code})`;
+      }).join(', ');
+    }
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background/95">
       <Header />
       
-      <div className="container max-w-7xl mx-auto py-12 px-4">
+      <div className="container max-w-7xl mx-auto py-8 px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mb-12"
+          className="mb-8"
         >
           <h1 className="text-4xl font-bold text-center mb-6 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
             Explore Countries Around the World
           </h1>
           <p className="text-center text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Search for any country to learn about its culture, geography, and interesting facts
+            Search for any country to discover its culture, geography, and fascinating details
           </p>
 
           <div className="flex flex-col md:flex-row gap-4 max-w-3xl mx-auto">
@@ -247,7 +272,7 @@ const Search = () => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="text-center text-red-500 my-8"
+            className="text-center text-red-500 my-8 p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/10"
           >
             {error}
           </motion.div>
@@ -260,51 +285,98 @@ const Search = () => {
             animate="show"
             className="space-y-8"
           >
-            <motion.div variants={itemAnimation}>
-              <div className="country-card">
-                <CountryCard 
-                  country={country}
-                  loading={loading}
-                  error={error}
-                  onExploreClick={() => {
-                    const section = document.getElementById('country-details');
-                    if (section) {
-                      section.scrollIntoView({ behavior: 'smooth' });
-                    }
-                  }}
-                  onAddToFavorites={handleAddToFavorites}
-                  isFavorite={isFavorite}
-                  newsLoading={newsLoading}
-                  weatherLoading={weatherLoading}
-                  translationLoading={translationLoading}
-                  newsError={newsError}
-                  weatherError={weatherError}
-                  translationError={translationError}
-                />
-              </div>
+            {/* Country Overview Section */}
+            <motion.div variants={itemAnimation} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Flag and Basic Info */}
+              <Card className="col-span-1 shadow-md hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                    <Flag className="h-5 w-5 text-primary" />
+                    {country.name.common}
+                  </CardTitle>
+                  <CardDescription>{country.name.official}</CardDescription>
+                </CardHeader>
+                
+                <CardContent className="space-y-4">
+                  {/* Flag */}
+                  <div className="flex justify-center">
+                    <img
+                      src={country.flags.svg || country.flags.png}
+                      alt={`Flag of ${country.name.common}`}
+                      className="rounded-md max-w-full h-auto shadow-sm"
+                      style={{ maxHeight: "150px" }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = `https://via.placeholder.com/320x180?text=${encodeURIComponent(country.name.common)}+Flag`;
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Quick Facts */}
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-4">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">Capital</span>
+                      <span className="font-medium">{country.capital?.join(', ') || 'N/A'}</span>
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">Region</span>
+                      <span className="font-medium">{country.region}</span>
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">Population</span>
+                      <span className="font-medium">{formattedPopulation}</span>
+                    </div>
+                    
+                    <div className="flex flex-col">
+                      <span className="text-xs text-muted-foreground">Area</span>
+                      <span className="font-medium">{area}</span>
+                    </div>
+                    
+                    <div className="flex flex-col col-span-2">
+                      <span className="text-xs text-muted-foreground">Languages</span>
+                      <span className="font-medium">{languages}</span>
+                    </div>
+                    
+                    <div className="flex flex-col col-span-2">
+                      <span className="text-xs text-muted-foreground">Currency</span>
+                      <span className="font-medium">{currencyInfo}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Add to Favorites */}
+                  <div className="flex justify-end mt-4">
+                    <Button
+                      variant={isFavorite ? "destructive" : "outline"}
+                      size="sm"
+                      onClick={handleAddToFavorites}
+                      title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Map and Location */}
+              <Card className="col-span-1 lg:col-span-2 shadow-md hover:shadow-lg transition-shadow">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <MapPin className="h-5 w-5 text-primary" />
+                    Geographic Location
+                  </CardTitle>
+                  <CardDescription>
+                    {country.subregion ? `${country.subregion}, ${country.region}` : country.region}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <CountryBorderMap countryName={country.name.common} countryCode={country.cca3} />
+                </CardContent>
+              </Card>
             </motion.div>
 
-            <div id="country-details"></div>
-
-            <motion.div variants={itemAnimation}>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <CountryBorderMap countryName={country.name.common} countryCode={country.cca3} />
-                <WeatherDisplay countryName={country.name.common} capital={country.capital?.[0]} />
-              </div>
-            </motion.div>
-
-            <motion.div variants={itemAnimation}>
-              <ImageGallery country={country.name.common} />
-            </motion.div>
-
-            <motion.div variants={itemAnimation}>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <HistoricalEvents countryName={country.name.common} />
-                <CelebritiesSection countryName={country.name.common} />
-                <CulinarySection countryName={country.name.common} />
-              </div>
-            </motion.div>
-
+            {/* Translation Component */}
             <motion.div variants={itemAnimation}>
               <TranslationSection 
                 countryName={country.name.common} 
@@ -314,16 +386,94 @@ const Search = () => {
                 error={translationError}
               />
             </motion.div>
-            
+
+            {/* Image Gallery */}
             <motion.div variants={itemAnimation}>
-              <NewsSection 
-                countryName={country.name.common}
-                news={news}
-                isLoading={newsLoading}
-                error={newsError}
-              />
+              <Card className="shadow-md">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-lg">Photos of {country.name.common}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ImageGallery country={country.name.common} numberOfImages={6} />
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Tabbed Content for Secondary Information */}
+            <motion.div variants={itemAnimation}>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="w-full grid grid-cols-2 md:grid-cols-5 gap-2">
+                  <TabsTrigger value="history" className="flex items-center gap-1">
+                    <Landmark className="h-4 w-4" />
+                    <span className="hidden md:inline">History</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="news" className="flex items-center gap-1">
+                    <Globe className="h-4 w-4" />
+                    <span className="hidden md:inline">News</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="weather" className="flex items-center gap-1">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 15a4 4 0 004 4h9a5 5 0 001.5-9.5A5 5 0 0012 5.5a4.5 4.5 0 00-4.4 3.6A5 5 0 003 15z" />
+                    </svg>
+                    <span className="hidden md:inline">Weather</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="cuisine" className="flex items-center gap-1">
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="hidden md:inline">Cuisine</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="people" className="flex items-center gap-1">
+                    <Users className="h-4 w-4" />
+                    <span className="hidden md:inline">Notable People</span>
+                  </TabsTrigger>
+                </TabsList>
+
+                <div className="mt-6">
+                  <TabsContent value="history" className="mt-0">
+                    <HistoricalEvents countryName={country.name.common} />
+                  </TabsContent>
+                  
+                  <TabsContent value="news" className="mt-0">
+                    <NewsSection 
+                      countryName={country.name.common}
+                      news={news}
+                      isLoading={newsLoading}
+                      error={newsError}
+                    />
+                  </TabsContent>
+                  
+                  <TabsContent value="weather" className="mt-0">
+                    <WeatherDisplay countryName={country.name.common} capital={country.capital?.[0]} />
+                  </TabsContent>
+                  
+                  <TabsContent value="cuisine" className="mt-0">
+                    <CulinarySection countryName={country.name.common} />
+                  </TabsContent>
+                  
+                  <TabsContent value="people" className="mt-0">
+                    <CelebritiesSection countryName={country.name.common} />
+                  </TabsContent>
+                </div>
+              </Tabs>
             </motion.div>
           </motion.div>
+        )}
+
+        {!country && !error && !loading && (
+          <div className="text-center py-16">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="max-w-md mx-auto"
+            >
+              <Globe className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+              <h2 className="text-xl font-medium mb-2">Search for a country</h2>
+              <p className="text-muted-foreground">
+                Enter a country name above to discover information about it, or try the random country button to explore somewhere new.
+              </p>
+            </motion.div>
+          </div>
         )}
       </div>
     </div>

@@ -21,8 +21,9 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
       setLoading(true);
       try {
         // Using Unsplash Source API which doesn't require authentication
+        // Adding a timestamp to prevent caching and get different images
         const urls = Array.from({ length: numberOfImages }).map((_, index) => 
-          `https://source.unsplash.com/featured/640x480?${encodeURIComponent(country)}&sig=${Date.now() + index}`
+          `https://source.unsplash.com/featured/800x600?${encodeURIComponent(country)}&sig=${Date.now() + index}`
         );
         setImageUrls(urls);
       } catch (error) {
@@ -46,36 +47,38 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   };
 
   return (
-    <div className="my-4">
-      <h3 className="font-semibold text-lg mb-2">Gallery of {country}</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-4">
-        {loading ? 
-          Array.from({ length: numberOfImages }).map((_, index) => (
+    <div className="w-full">
+      {loading ? 
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          {Array.from({ length: numberOfImages }).map((_, index) => (
             <Skeleton key={`skeleton-${index}`} className="w-full aspect-[4/3]" />
-          )) :
-          imageUrls.map((url, index) => (
-            <div key={index} className="relative rounded-md overflow-hidden aspect-[4/3]">
+          ))}
+        </div> :
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+          {imageUrls.map((url, index) => (
+            <div key={index} className="relative rounded-md overflow-hidden aspect-[4/3] group">
               {!loadedImages[index] && (
                 <Skeleton className="absolute inset-0 w-full h-full" />
               )}
               <img
                 src={url}
                 alt={`Image ${index + 1} of ${country}`}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${loadedImages[index] ? 'opacity-100' : 'opacity-0'}`}
+                className={`w-full h-full object-cover transition-all duration-500 ${loadedImages[index] ? 'opacity-100' : 'opacity-0'} group-hover:scale-105`}
                 onLoad={() => handleImageLoaded(index)}
                 onError={(e) => {
                   // Fallback to a placeholder if the image fails to load
                   const target = e.target as HTMLImageElement;
-                  target.src = `https://via.placeholder.com/640x480?text=${encodeURIComponent(country)}+${index+1}`;
+                  target.src = `https://via.placeholder.com/800x600?text=${encodeURIComponent(country)}+${index+1}`;
                   handleImageLoaded(index);
                 }}
                 loading="lazy"
               />
+              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300"></div>
             </div>
-          ))
-        }
-      </div>
-      <p className="text-xs text-muted-foreground mt-2">Images from Unsplash</p>
+          ))}
+        </div>
+      }
+      <p className="text-xs text-muted-foreground mt-2 text-right">Images from Unsplash</p>
     </div>
   );
 };
