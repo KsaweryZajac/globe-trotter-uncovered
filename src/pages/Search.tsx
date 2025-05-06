@@ -210,8 +210,8 @@ const Search = () => {
   // Format population with commas
   const formattedPopulation = country?.population?.toLocaleString() || 'N/A';
   
-  // Get area if available
-  const area = country?.area ? `${country.area.toLocaleString()} km²` : 'N/A';
+  // Get area if available - using optional chaining for safety
+  const area = country?.area ? `${country?.area.toLocaleString()} km²` : 'N/A';
 
   // Calculate languages
   const languages = country?.languages 
