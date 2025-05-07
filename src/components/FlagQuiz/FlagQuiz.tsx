@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,6 @@ import PlayerNameInput from './PlayerNameInput';
 import QuizGameBoard from './QuizGameBoard';
 import QuizResultScreen from './QuizResultScreen';
 import FlagQuizDifficulty from './FlagQuizDifficulty';
-import { useToast } from '@/components/ui/use-toast';
 
 type GameState = 'name_input' | 'select_difficulty' | 'playing' | 'game_over';
 
@@ -30,7 +30,6 @@ const FlagQuiz: React.FC = () => {
   const [selectedScoreDifficulty, setSelectedScoreDifficulty] = useState<DifficultyLevel>('easy');
   const [startTime, setStartTime] = useState<number>(0);
   const [endTime, setEndTime] = useState<number>(0);
-  const { toast } = useToast();
 
   // Load high scores when component mounts
   useEffect(() => {
@@ -54,30 +53,14 @@ const FlagQuiz: React.FC = () => {
       // Start timer
       const now = Date.now();
       setStartTime(now);
-      
-      // Show loading toast
-      toast({
-        title: "Loading quiz...",
-        description: `Preparing ${selectedDifficulty} level questions`,
-      });
-      
+            
       // Generate quiz questions based on difficulty
       const quizQuestions = await flagQuizApi.generateQuiz(10, selectedDifficulty);
       setQuestions(quizQuestions);
       setGameState('playing');
       
-      // Show ready toast
-      toast({
-        title: "Quiz ready!",
-        description: `Good luck with the ${selectedDifficulty} difficulty level!`,
-      });
     } catch (error) {
       console.error('Failed to generate quiz:', error);
-      toast({
-        title: "Error",
-        description: "Failed to generate quiz questions. Please try again.",
-        variant: "destructive",
-      });
     }
   };
 
@@ -90,16 +73,6 @@ const FlagQuiz: React.FC = () => {
     
     if (isCorrect) {
       setScore(prevScore => prevScore + 1);
-      toast({
-        title: "Correct!",
-        description: `That's the flag of ${currentQuestion.correctCountry.name.common}`,
-      });
-    } else {
-      toast({
-        title: "Incorrect",
-        description: `That was the flag of ${currentQuestion.correctCountry.name.common}`,
-        variant: "destructive",
-      });
     }
     
     // Move to next question or end game

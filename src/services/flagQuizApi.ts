@@ -76,19 +76,21 @@ const generateQuiz = async (numQuestions: number = 10, difficulty: DifficultyLev
         break;
       
       case 'hard':
-        // For hard difficulty, prioritize countries with similar flags
-        const confusingCountries = allCountries.filter(country => 
+        // Include countries with similar flags and some lesser-known countries
+        // First, get countries with confusing/similar flags
+        const confusingCountriesArray = allCountries.filter(country => 
           confusingFlags.includes(country.name.common)
         );
         
-        // Ensure we have enough countries even if some confusing ones aren't found
-        const remainingCount = Math.max(0, 30 - confusingCountries.length);
-        const otherHardCountries = allCountries
-          .filter(country => !confusingFlags.includes(country.name.common))
-          .sort(() => Math.random() - 0.5)
-          .slice(0, remainingCount);
+        // Then add some lesser-known countries
+        const lesserKnownCountries = allCountries.filter(country => 
+          country.population < 5000000 && 
+          !moderateCountries.includes(country.name.common) &&
+          !confusingFlags.includes(country.name.common)
+        );
         
-        filteredCountries = [...confusingCountries, ...otherHardCountries];
+        // Combine and shuffle
+        filteredCountries = [...confusingCountriesArray, ...lesserKnownCountries];
         break;
       
       default:
@@ -96,9 +98,13 @@ const generateQuiz = async (numQuestions: number = 10, difficulty: DifficultyLev
     }
     
     // Ensure we have enough countries to create a quiz
-    if (filteredCountries.length < numQuestions + 3) {
+    if (filteredCountries.length < numQuestions * 4) { // Need at least 4x questions for options
       // If we don't have enough countries for the chosen difficulty, use more countries
-      filteredCountries = allCountries;
+      const additionalCountries = allCountries.filter(
+        country => !filteredCountries.some(c => c.cca3 === country.cca3)
+      );
+      
+      filteredCountries = [...filteredCountries, ...additionalCountries];
     }
     
     // Shuffle the filtered countries
@@ -120,28 +126,39 @@ const generateQuiz = async (numQuestions: number = 10, difficulty: DifficultyLev
       // Generate incorrect options
       const incorrectOptions: Country[] = [];
       const remainingCountries = shuffledCountries.filter(c => 
-        c.cca3 !== correctCountry.cca3 && !incorrectOptions.some(o => o.cca3 === c.cca3)
+        c.cca3 !== correctCountry.cca3 && !usedCountries.has(c.cca3)
       );
       
       // For hard level, try to find similar flags when possible
       if (difficulty === 'hard') {
         // Get countries with similar colors in flag
-        // This is a simple approach - in a real app, you might use image analysis
-        const correctColors = extractFlagColors(correctCountry.name.common);
-        const similarCountries = remainingCountries
+        const similarFlags = remainingCountries
           .filter(c => {
-            const colors = extractFlagColors(c.name.common);
-            return hasCommonElements(correctColors, colors);
+            // Check for region similarity (countries in same region often have similar flags)
+            const sameRegion = c.region === correctCountry.region;
+            
+            // Check for similar flag colors (simplified implementation)
+            const flagSimilarity = hasColorSimilarities(correctCountry, c);
+            
+            return sameRegion || flagSimilarity;
           })
           .slice(0, 3);
         
-        incorrectOptions.push(...similarCountries);
+        incorrectOptions.push(...similarFlags);
+        
+        // Mark these countries as used
+        similarFlags.forEach(country => usedCountries.add(country.cca3));
       }
       
       // If we don't have enough similar options, add random ones
       while (incorrectOptions.length < 3 && remainingCountries.length > 0) {
         const randomIndex = Math.floor(Math.random() * remainingCountries.length);
-        incorrectOptions.push(remainingCountries.splice(randomIndex, 1)[0]);
+        const randomCountry = remainingCountries.splice(randomIndex, 1)[0];
+        
+        if (!usedCountries.has(randomCountry.cca3)) {
+          incorrectOptions.push(randomCountry);
+          usedCountries.add(randomCountry.cca3);
+        }
       }
       
       // Create options array with correct and incorrect options
@@ -159,6 +176,38 @@ const generateQuiz = async (numQuestions: number = 10, difficulty: DifficultyLev
     console.error('Failed to generate quiz:', error);
     throw new Error('Failed to generate quiz');
   }
+};
+
+// Helper function to check if two countries' flags might be similar
+const hasColorSimilarities = (country1: Country, country2: Country): boolean => {
+  // This is a very simplified approach - in reality would need image processing
+  // Check for geographic proximity as it often correlates with flag similarities
+  if (country1.region === country2.region) return true;
+  
+  // Check specific known confusing flag pairs
+  const confusingPairs: Record<string, string[]> = {
+    'Chad': ['Romania', 'Belgium'],
+    'Romania': ['Chad', 'Moldova'],
+    'Indonesia': ['Monaco', 'Poland'],
+    'Monaco': ['Indonesia', 'Poland'],
+    'Netherlands': ['Luxembourg', 'France'],
+    'Luxembourg': ['Netherlands'],
+    'Russia': ['Slovakia', 'Slovenia'],
+    'Slovakia': ['Slovenia', 'Russia'],
+    'Slovenia': ['Slovakia', 'Russia'],
+    'Ireland': ['Ivory Coast'],
+    'Ivory Coast': ['Ireland'],
+    'Mali': ['Senegal', 'Guinea'],
+    'Senegal': ['Mali', 'Guinea'],
+    'Guinea': ['Mali', 'Senegal']
+  };
+  
+  if (confusingPairs[country1.name.common] && 
+      confusingPairs[country1.name.common].includes(country2.name.common)) {
+    return true;
+  }
+  
+  return false;
 };
 
 // Helper function to get high scores from local storage
@@ -181,34 +230,6 @@ const saveScore = (result: QuizResult): void => {
   } catch (error) {
     console.error('Failed to save score:', error);
   }
-};
-
-// Helper function to extract flag colors (simplified approach)
-const extractFlagColors = (countryName: string): string[] => {
-  // This is a simplified approach - in reality would need image processing
-  // Just returning some common colors based on country names for demonstration
-  const colorMap: Record<string, string[]> = {
-    'Chad': ['blue', 'yellow', 'red'],
-    'Romania': ['blue', 'yellow', 'red'],
-    'Belgium': ['black', 'yellow', 'red'],
-    'Germany': ['black', 'red', 'yellow'],
-    'Russia': ['white', 'blue', 'red'],
-    'France': ['blue', 'white', 'red'],
-    'Netherlands': ['red', 'white', 'blue'],
-    'Italy': ['green', 'white', 'red'],
-    'Ireland': ['green', 'white', 'orange'],
-    'Ivory Coast': ['orange', 'white', 'green'],
-    'Hungary': ['red', 'white', 'green'],
-    'Bulgaria': ['white', 'green', 'red'],
-    // Add more as needed
-  };
-  
-  return colorMap[countryName] || [];
-};
-
-// Helper function to check if two arrays have at least one common element
-const hasCommonElements = (array1: string[], array2: string[]): boolean => {
-  return array1.some(item => array2.includes(item));
 };
 
 const flagQuizApi = {

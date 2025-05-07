@@ -1,10 +1,10 @@
 
 import React from 'react';
-import { motion } from 'framer-motion';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Trophy, Timer, RotateCw, List } from 'lucide-react';
 import { DifficultyLevel } from '@/services/flagQuizApi';
+import { motion } from 'framer-motion';
+import { CheckCircle, Clock, Award, RotateCw, Trophy } from 'lucide-react';
 
 interface QuizResultScreenProps {
   score: number;
@@ -23,95 +23,98 @@ const QuizResultScreen: React.FC<QuizResultScreenProps> = ({
   difficulty,
   timeInSeconds,
   onRestart,
-  onViewScoreboard
+  onViewScoreboard,
 }) => {
-  // Format time in MM:SS format
-  const formatTime = (seconds: number): string => {
+  const percentage = Math.round((score / totalQuestions) * 100);
+  
+  // Format time as MM:SS
+  const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
-
-  // Calculate percentage score
-  const percentage = Math.round((score / totalQuestions) * 100);
   
-  // Feedback based on score
-  const getFeedback = (): { message: string; icon: React.ReactNode } => {
-    if (percentage >= 90) {
-      return {
-        message: "Outstanding! You're a flag expert!",
-        icon: <Trophy className="h-12 w-12 text-yellow-500" />
-      };
-    } else if (percentage >= 70) {
-      return {
-        message: "Great job! Your geography knowledge is impressive!",
-        icon: <Trophy className="h-12 w-12 text-blue-500" />
-      };
-    } else if (percentage >= 50) {
-      return {
-        message: "Good effort! Keep learning those flags!",
-        icon: <Trophy className="h-12 w-12 text-green-500" />
-      };
-    } else {
-      return {
-        message: "Nice try! With practice, you'll improve!",
-        icon: <Trophy className="h-12 w-12 text-slate-500" />
-      };
-    }
+  // Get result message based on score
+  const getMessage = (): string => {
+    if (percentage >= 90) return "Excellent! You're a flag expert!";
+    if (percentage >= 70) return "Great job! You know your flags well!";
+    if (percentage >= 50) return "Good effort! Keep learning those flags!";
+    return "Nice try! Practice makes perfect!";
   };
 
-  const feedback = getFeedback();
-
   return (
-    <Card>
-      <CardHeader className="text-center pb-2">
-        <CardTitle className="text-2xl">{playerName}'s Results</CardTitle>
-        <CardDescription>Difficulty: {difficulty.charAt(0).toUpperCase() + difficulty.slice(1)}</CardDescription>
+    <Card className="overflow-hidden">
+      <CardHeader className="bg-gradient-to-r from-primary/10 to-accent/10">
+        <CardTitle className="text-center">Quiz Complete!</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex justify-center">
+      <CardContent className="p-6">
+        <div className="space-y-6">
           <motion.div 
-            initial={{ scale: 0.5, opacity: 0 }}
+            initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ duration: 0.5 }}
+            className="flex flex-col items-center justify-center"
           >
-            {feedback.icon}
+            <div className="text-center">
+              <h3 className="text-2xl font-bold mb-2">{getMessage()}</h3>
+              <p className="text-muted-foreground">
+                {playerName}, you completed the {difficulty} difficulty quiz!
+              </p>
+            </div>
+            
+            <div className="w-40 h-40 relative mt-6 mb-8">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-4xl font-bold">{score}/{totalQuestions}</div>
+                  <div className="text-sm text-muted-foreground">{percentage}%</div>
+                </div>
+              </div>
+              <svg className="w-full h-full" viewBox="0 0 100 100">
+                <circle 
+                  cx="50" cy="50" r="45" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeOpacity="0.1" 
+                  strokeWidth="10"
+                />
+                <circle 
+                  cx="50" cy="50" r="45" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeDasharray={`${percentage * 2.83} 283`} 
+                  strokeDashoffset="0" 
+                  strokeLinecap="round" 
+                  strokeWidth="10"
+                  transform="rotate(-90 50 50)"
+                />
+              </svg>
+            </div>
           </motion.div>
-        </div>
-        
-        <div className="text-center">
-          <motion.h2 
-            className="text-3xl font-bold"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            {score} / {totalQuestions}
-          </motion.h2>
-          <p className="text-lg text-muted-foreground">{percentage}% Correct</p>
-        </div>
-        
-        <motion.div 
-          className="flex items-center justify-center text-muted-foreground"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Timer className="h-4 w-4 mr-1" />
-          <span>Time: {formatTime(timeInSeconds)}</span>
-        </motion.div>
-        
-        <p className="text-center font-medium">{feedback.message}</p>
-        
-        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-          <Button variant="outline" onClick={onRestart} className="flex items-center gap-2">
-            <RotateCw className="h-4 w-4" />
-            Play Again
-          </Button>
-          <Button onClick={onViewScoreboard} className="flex items-center gap-2">
-            <List className="h-4 w-4" />
-            View Leaderboard
-          </Button>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col items-center p-4 bg-muted/30 rounded-lg">
+              <Clock className="h-6 w-6 mb-2 text-primary" />
+              <span className="text-sm font-medium">Time</span>
+              <span className="text-2xl font-bold">{formatTime(timeInSeconds)}</span>
+            </div>
+            
+            <div className="flex flex-col items-center p-4 bg-muted/30 rounded-lg">
+              <Award className="h-6 w-6 mb-2 text-primary" />
+              <span className="text-sm font-medium">Difficulty</span>
+              <span className="text-2xl font-bold capitalize">{difficulty}</span>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <Button variant="outline" onClick={onRestart} className="w-full">
+              <RotateCw className="h-4 w-4 mr-2" />
+              Play Again
+            </Button>
+            <Button onClick={onViewScoreboard} className="w-full">
+              <Trophy className="h-4 w-4 mr-2" />
+              View Scores
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

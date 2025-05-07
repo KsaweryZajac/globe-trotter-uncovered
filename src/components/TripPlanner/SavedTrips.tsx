@@ -3,9 +3,8 @@ import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { EditIcon, TrashIcon, CalendarIcon, MapPinIcon, EyeIcon, DownloadIcon } from 'lucide-react';
+import { EditIcon, TrashIcon, CalendarIcon, MapPinIcon, EyeIcon } from 'lucide-react';
 import { Trip } from './TripForm';
-import { toast } from 'sonner';
 
 interface SavedTripsProps {
   trips: Trip[];
@@ -17,7 +16,6 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
   // Handle viewing a trip
   const handleViewTrip = (trip: Trip) => {
     onSelectTrip(trip);
-    toast.success(`Opened "${trip.title}"`);
   };
 
   return (

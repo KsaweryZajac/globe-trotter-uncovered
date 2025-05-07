@@ -1,15 +1,16 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { motion } from 'framer-motion';
 
 interface PlayerNameInputProps {
   onSubmit: (name: string) => void;
 }
 
 const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onSubmit }) => {
-  const [name, setName] = useState<string>('');
+  const [name, setName] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,30 +22,31 @@ const PlayerNameInput: React.FC<PlayerNameInputProps> = ({ onSubmit }) => {
   return (
     <Card>
       <CardContent className="pt-6">
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="playerName" className="text-sm font-medium block mb-1">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="playerName" className="block font-medium">
                 Your Name
               </label>
               <Input
                 id="playerName"
-                placeholder="Enter your name"
+                placeholder="Enter your name to start"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full"
+                autoFocus
                 maxLength={20}
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={!name.trim()}
-            >
-              Start Quiz
+            <Button type="submit" className="w-full" disabled={!name.trim()}>
+              Continue to Difficulty Selection
             </Button>
-          </div>
-        </form>
+          </form>
+        </motion.div>
       </CardContent>
     </Card>
   );
