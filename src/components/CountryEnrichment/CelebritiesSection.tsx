@@ -22,15 +22,53 @@ const CelebritiesSection = ({ countryName }: CelebritiesSectionProps) => {
     'mountains', 'ethnic', 'group', 'list', 'range', 'region', 'river',
     'lake', 'forest', 'valley', 'cuisine', 'dish', 'food', 'park',
     'museum', 'monument', 'building', 'festival', 'event', 'tradition',
-    'dance', 'music', 'instrument', 'team', 'city', 'province', 'district'
+    'dance', 'music', 'instrument', 'team', 'city', 'province', 'district',
+    'error', 'not found', 'disambiguation', 'category', 'index', 'list of'
   ];
+
+  // Terms that indicate a real person
+  const personIndicators = [
+    'born', 'died', 'singer', 'actor', 'actress', 'politician', 'writer',
+    'author', 'scientist', 'artist', 'musician', 'composer', 'director',
+    'player', 'athlete', 'president', 'prime minister', 'king', 'queen',
+    'emperor', 'empress', 'duke', 'duchess', 'prince', 'princess'
+  ];
+
+  // Clean text function to remove common artifacts
+  const cleanText = (text: string): string => {
+    if (!text) return '';
+
+    return text
+      // Remove HTML entities
+      .replace(/&quot;/g, '"')
+      .replace(/&gt;/g, '>')
+      .replace(/&lt;/g, '<')
+      .replace(/&amp;/g, '&')
+      // Remove citation references [1], [2], etc.
+      .replace(/\[\d+\]/g, '')
+      // Remove other common markers
+      .replace(/\^/g, '')
+      // Remove multiple spaces
+      .replace(/\s+/g, ' ')
+      // Clean up trailing punctuation irregularities
+      .replace(/\s+[.,;:]\s*$/g, '')
+      .trim();
+  };
 
   useEffect(() => {
     const fetchCelebrities = async () => {
       try {
         setLoading(true);
         setError(null);
-        const celebs = await countryEnrichmentApi.getCelebrities(countryName);
+        let celebs = await countryEnrichmentApi.getCelebrities(countryName);
+        
+        // Clean up the description text
+        celebs = celebs.map(celeb => ({
+          ...celeb,
+          description: cleanText(celeb.description),
+          name: cleanText(celeb.name),
+          profession: cleanText(celeb.profession)
+        }));
         
         // Filter out non-person entries by checking for common indicators
         const filteredCelebs = celebs.filter(celeb => {
@@ -46,14 +84,25 @@ const CelebritiesSection = ({ countryName }: CelebritiesSectionProps) => {
             lowerCaseDescription.includes(`group of ${term}`)
           );
           
+          // Check for person indicators
+          const isPerson = personIndicators.some(term =>
+            lowerCaseDescription.includes(term) ||
+            lowerCaseProfession.includes(term)
+          );
+          
           // Additional checks for list-like entries
           const isListEntry = 
             lowerCaseName.includes('list') || 
             lowerCaseDescription.startsWith('list') ||
             lowerCaseName.includes(' of ') || 
-            lowerCaseName.includes('most ');
+            lowerCaseName.includes('most ') ||
+            lowerCaseName.includes('error') ||
+            lowerCaseName.includes('disambiguation');
           
-          return !isNonPerson && !isListEntry;
+          // Content length check to filter out poor quality entries
+          const hasGoodContent = celeb.description.length > 20;
+          
+          return !isNonPerson && !isListEntry && (isPerson || hasGoodContent);
         });
         
         setCelebrities(filteredCelebs);

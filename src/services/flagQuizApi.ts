@@ -1,427 +1,220 @@
-import axios from 'axios';
+
+import api from './api';
 import { Country } from './api';
 
-// Define types for the multiplayer API
-export interface Player {
-  id: string;
-  name: string;
+export type DifficultyLevel = 'beginner' | 'easy' | 'medium' | 'hard';
+
+export interface QuizQuestion {
+  correctCountry: Country;
+  options: Country[];
+}
+
+export interface QuizResult {
+  playerName: string;
   score: number;
-  avatar: string;
-  isHost: boolean;
+  maxScore: number;
+  timeInSeconds: number;
+  date: string;
+  difficulty: DifficultyLevel;
 }
 
-export interface Lobby {
-  code: string;
-  players: Player[];
-  started: boolean;
-  currentQuestion: number;
-  quizSettings: {
-    questionsCount: number;
-    optionsPerQuestion: number;
-    timeLimit: number;
-  };
-}
+// List of common/well-known countries for beginner level
+const commonCountries = [
+  'United States', 'Canada', 'Mexico', 'Brazil', 'United Kingdom', 
+  'France', 'Germany', 'Italy', 'Spain', 'Russia', 'China', 
+  'Japan', 'India', 'Australia', 'Egypt', 'South Africa'
+];
 
-export interface LobbyJoinResponse {
-  success: boolean;
-  lobby: Lobby;
-  playerId: string;
-  message?: string;
-}
+// List of moderately known countries for easy level
+const moderateCountries = [
+  ...commonCountries,
+  'Argentina', 'Sweden', 'Norway', 'Finland', 'Denmark', 
+  'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Greece', 
+  'Turkey', 'Thailand', 'Vietnam', 'South Korea', 'New Zealand'
+];
 
-export interface AnswerSubmission {
-  lobbyCode: string;
-  playerId: string;
-  questionIndex: number;
-  selectedCountryId: string;
-  timeElapsed: number;
-}
+// Countries with similar flags that often confuse people for hard level
+const confusingFlags = [
+  'Chad', 'Romania', 'Indonesia', 'Monaco', 'Poland', 'Ukraine', 
+  'Lithuania', 'Colombia', 'Venezuela', 'Ecuador', 'Slovenia', 
+  'Slovakia', 'Russia', 'Serbia', 'Bulgaria', 'Hungary', 'Iran', 'Italy',
+  'Ireland', 'Ivory Coast', 'Mali', 'Senegal', 'Guinea'
+];
 
-export interface GameState {
-  lobby: Lobby;
-  countries: Country[];
-  currentQuestion: number;
-  playersAnswered: string[];
-}
-
-// Base URL for the multiplayer API - would be replaced with a real backend URL
-// For now, we'll use a mock API that simulates backend behavior
-const API_BASE_URL = 'https://api.example.com/flag-quiz';
-
-// Function to get flag quiz questions
-export const getFlagQuiz = async () => {
+const generateQuiz = async (numQuestions: number = 10, difficulty: DifficultyLevel = 'easy'): Promise<QuizQuestion[]> => {
   try {
-    // All available quiz questions
-    const allQuizQuestions = [
-      {
-        flag: "https://flagcdn.com/w320/us.png",
-        options: ["United States", "Canada", "United Kingdom", "Australia"],
-        correctAnswer: "United States"
-      },
-      {
-        flag: "https://flagcdn.com/w320/jp.png",
-        options: ["China", "South Korea", "Japan", "Vietnam"],
-        correctAnswer: "Japan"
-      },
-      {
-        flag: "https://flagcdn.com/w320/br.png",
-        options: ["Argentina", "Brazil", "Peru", "Colombia"],
-        correctAnswer: "Brazil"
-      },
-      {
-        flag: "https://flagcdn.com/w320/fr.png",
-        options: ["Italy", "Germany", "Spain", "France"],
-        correctAnswer: "France"
-      },
-      {
-        flag: "https://flagcdn.com/w320/za.png",
-        options: ["Nigeria", "Kenya", "South Africa", "Egypt"],
-        correctAnswer: "South Africa"
-      },
-      {
-        flag: "https://flagcdn.com/w320/au.png",
-        options: ["New Zealand", "Australia", "United Kingdom", "Canada"],
-        correctAnswer: "Australia"
-      },
-      {
-        flag: "https://flagcdn.com/w320/de.png",
-        options: ["France", "Belgium", "Germany", "Netherlands"],
-        correctAnswer: "Germany"
-      },
-      {
-        flag: "https://flagcdn.com/w320/ca.png",
-        options: ["United States", "Canada", "Iceland", "Norway"],
-        correctAnswer: "Canada"
-      },
-      {
-        flag: "https://flagcdn.com/w320/in.png",
-        options: ["Pakistan", "Bangladesh", "India", "Sri Lanka"],
-        correctAnswer: "India"
-      },
-      {
-        flag: "https://flagcdn.com/w320/mx.png",
-        options: ["Spain", "Italy", "Mexico", "Colombia"],
-        correctAnswer: "Mexico"
-      }
-    ];
+    // Fetch all countries first
+    const allCountries = await api.getAllCountries();
     
-    // Shuffle the questions
-    const shuffleArray = (array: any[]) => {
-      const shuffled = [...array];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    };
-    
-    return shuffleArray(allQuizQuestions).slice(0, 5); // Return 5 random questions
-  } catch (error) {
-    console.error("Error fetching flag quiz:", error);
-    throw new Error("Failed to fetch flag quiz questions");
-  }
-};
-
-// In a real implementation, this would be actual API calls
-// For now, we'll simulate the backend with local storage and timeouts
-// to demonstrate the integration pattern
-
-// Create a class to manage the local storage mock backend
-class LocalStorageMockBackend {
-  private static STORAGE_KEY = 'flag_quiz_lobbies';
-  
-  // Get all lobbies from local storage
-  static getLobbies(): Record<string, Lobby> {
-    const lobbiesJson = localStorage.getItem(this.STORAGE_KEY);
-    return lobbiesJson ? JSON.parse(lobbiesJson) : {};
-  }
-  
-  // Save lobbies to local storage
-  static saveLobbies(lobbies: Record<string, Lobby>): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(lobbies));
-  }
-  
-  // Get a specific lobby
-  static getLobby(code: string): Lobby | null {
-    const lobbies = this.getLobbies();
-    return lobbies[code] || null;
-  }
-  
-  // Save or update a lobby
-  static saveLobby(lobby: Lobby): void {
-    const lobbies = this.getLobbies();
-    lobbies[lobby.code] = lobby;
-    this.saveLobbies(lobbies);
-  }
-}
-
-// Generate a random lobby code
-const generateLobbyCode = (): string => {
-  const characters = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar-looking characters
-  let result = '';
-  for (let i = 0; i < 5; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-};
-
-// Generate a unique player ID
-const generatePlayerId = (): string => {
-  return `player_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-};
-
-// Flag Quiz Multiplayer API
-const flagQuizApi = {
-  // Create a new lobby
-  createLobby: async (playerName: string): Promise<LobbyJoinResponse> => {
-    try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate it
-      const lobbyCode = generateLobbyCode();
-      const playerId = generatePlayerId();
-      
-      const newLobby: Lobby = {
-        code: lobbyCode,
-        players: [{
-          id: playerId,
-          name: playerName,
-          score: 0,
-          avatar: '👑', // Host gets a crown
-          isHost: true
-        }],
-        started: false,
-        currentQuestion: 0,
-        quizSettings: {
-          questionsCount: 10,
-          optionsPerQuestion: 4,
-          timeLimit: 120
-        }
-      };
-      
-      // Save the lobby to our mock backend
-      LocalStorageMockBackend.saveLobby(newLobby);
-      
-      return {
-        success: true,
-        lobby: newLobby,
-        playerId: playerId
-      };
-    } catch (error) {
-      console.error('Error creating lobby:', error);
-      return {
-        success: false,
-        lobby: {} as Lobby,
-        playerId: '',
-        message: 'Failed to create lobby'
-      };
+    if (!allCountries || allCountries.length === 0) {
+      throw new Error('Failed to fetch countries');
     }
-  },
-  
-  // Join an existing lobby
-  joinLobby: async (lobbyCode: string, playerName: string): Promise<LobbyJoinResponse> => {
-    try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate it
-      const lobby = LocalStorageMockBackend.getLobby(lobbyCode);
+    
+    // Filter countries based on difficulty level
+    let filteredCountries: Country[];
+    
+    switch (difficulty) {
+      case 'beginner':
+        // Only use common countries
+        filteredCountries = allCountries.filter(country => 
+          commonCountries.includes(country.name.common)
+        );
+        break;
       
-      if (!lobby) {
-        return {
-          success: false,
-          lobby: {} as Lobby,
-          playerId: '',
-          message: 'Lobby not found'
-        };
+      case 'easy':
+        // Use moderately known countries
+        filteredCountries = allCountries.filter(country => 
+          moderateCountries.includes(country.name.common)
+        );
+        break;
+      
+      case 'medium':
+        // Use all countries except the most obscure ones
+        filteredCountries = allCountries.filter(country => 
+          country.population > 1000000 || moderateCountries.includes(country.name.common)
+        );
+        break;
+      
+      case 'hard':
+        // For hard difficulty, prioritize countries with similar flags
+        const confusingCountries = allCountries.filter(country => 
+          confusingFlags.includes(country.name.common)
+        );
+        
+        // Ensure we have enough countries even if some confusing ones aren't found
+        const remainingCount = Math.max(0, 30 - confusingCountries.length);
+        const otherHardCountries = allCountries
+          .filter(country => !confusingFlags.includes(country.name.common))
+          .sort(() => Math.random() - 0.5)
+          .slice(0, remainingCount);
+        
+        filteredCountries = [...confusingCountries, ...otherHardCountries];
+        break;
+      
+      default:
+        filteredCountries = allCountries;
+    }
+    
+    // Ensure we have enough countries to create a quiz
+    if (filteredCountries.length < numQuestions + 3) {
+      // If we don't have enough countries for the chosen difficulty, use more countries
+      filteredCountries = allCountries;
+    }
+    
+    // Shuffle the filtered countries
+    const shuffledCountries = [...filteredCountries].sort(() => Math.random() - 0.5);
+    
+    // Create quiz questions
+    const quiz: QuizQuestion[] = [];
+    const usedCountries = new Set<string>(); // Track used countries to avoid duplicates
+    
+    for (let i = 0; i < numQuestions && i < shuffledCountries.length; i++) {
+      const correctCountry = shuffledCountries[i];
+      
+      // Skip if we've already used this country
+      if (usedCountries.has(correctCountry.cca3)) {
+        continue;
+      }
+      usedCountries.add(correctCountry.cca3);
+      
+      // Generate incorrect options
+      const incorrectOptions: Country[] = [];
+      const remainingCountries = shuffledCountries.filter(c => 
+        c.cca3 !== correctCountry.cca3 && !incorrectOptions.some(o => o.cca3 === c.cca3)
+      );
+      
+      // For hard level, try to find similar flags when possible
+      if (difficulty === 'hard') {
+        // Get countries with similar colors in flag
+        // This is a simple approach - in a real app, you might use image analysis
+        const correctColors = extractFlagColors(correctCountry.name.common);
+        const similarCountries = remainingCountries
+          .filter(c => {
+            const colors = extractFlagColors(c.name.common);
+            return hasCommonElements(correctColors, colors);
+          })
+          .slice(0, 3);
+        
+        incorrectOptions.push(...similarCountries);
       }
       
-      if (lobby.started) {
-        return {
-          success: false,
-          lobby: {} as Lobby,
-          playerId: '',
-          message: 'Game already started'
-        };
+      // If we don't have enough similar options, add random ones
+      while (incorrectOptions.length < 3 && remainingCountries.length > 0) {
+        const randomIndex = Math.floor(Math.random() * remainingCountries.length);
+        incorrectOptions.push(remainingCountries.splice(randomIndex, 1)[0]);
       }
       
-      const playerId = generatePlayerId();
+      // Create options array with correct and incorrect options
+      const options = [correctCountry, ...incorrectOptions].sort(() => Math.random() - 0.5);
       
-      // Add the player to the lobby
-      lobby.players.push({
-        id: playerId,
-        name: playerName,
-        score: 0,
-        avatar: '🧑',
-        isHost: false
+      quiz.push({
+        correctCountry,
+        options
       });
-      
-      // Save the updated lobby
-      LocalStorageMockBackend.saveLobby(lobby);
-      
-      return {
-        success: true,
-        lobby,
-        playerId
-      };
-    } catch (error) {
-      console.error('Error joining lobby:', error);
-      return {
-        success: false,
-        lobby: {} as Lobby,
-        playerId: '',
-        message: 'Failed to join lobby'
-      };
     }
-  },
-  
-  // Start the game
-  startGame: async (lobbyCode: string, playerId: string, countries: Country[]): Promise<GameState | null> => {
-    try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate it
-      const lobby = LocalStorageMockBackend.getLobby(lobbyCode);
-      
-      if (!lobby) {
-        return null;
-      }
-      
-      // Check if the player is the host
-      const player = lobby.players.find(p => p.id === playerId);
-      if (!player || !player.isHost) {
-        return null;
-      }
-      
-      // Mark the game as started
-      lobby.started = true;
-      lobby.currentQuestion = 0;
-      
-      // Save the updated lobby
-      LocalStorageMockBackend.saveLobby(lobby);
-      
-      // In a real implementation, the backend would select countries
-      // For now, we'll just pass them from the client
-      
-      return {
-        lobby,
-        countries,
-        currentQuestion: 0,
-        playersAnswered: []
-      };
-    } catch (error) {
-      console.error('Error starting game:', error);
-      return null;
-    }
-  },
-  
-  // Submit an answer
-  submitAnswer: async (submission: AnswerSubmission, correctCountryId: string): Promise<{ success: boolean; updatedLobby: Lobby | null }> => {
-    try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate it
-      const lobby = LocalStorageMockBackend.getLobby(submission.lobbyCode);
-      
-      if (!lobby) {
-        return { success: false, updatedLobby: null };
-      }
-      
-      // Find the player
-      const playerIndex = lobby.players.findIndex(p => p.id === submission.playerId);
-      if (playerIndex === -1) {
-        return { success: false, updatedLobby: null };
-      }
-      
-      // Check if the answer is correct
-      const isCorrect = submission.selectedCountryId === correctCountryId;
-      
-      // Update player score if correct
-      if (isCorrect) {
-        lobby.players[playerIndex].score += 1;
-      }
-      
-      // Save the updated lobby
-      LocalStorageMockBackend.saveLobby(lobby);
-      
-      return {
-        success: true,
-        updatedLobby: lobby
-      };
-    } catch (error) {
-      console.error('Error submitting answer:', error);
-      return { success: false, updatedLobby: null };
-    }
-  },
-  
-  // Get lobby state
-  getLobbyState: async (lobbyCode: string): Promise<Lobby | null> => {
-    try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate it
-      return LocalStorageMockBackend.getLobby(lobbyCode);
-    } catch (error) {
-      console.error('Error getting lobby state:', error);
-      return null;
-    }
-  },
-  
-  // End the game and calculate final results
-  endGame: async (lobbyCode: string): Promise<Lobby | null> => {
-    try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate it
-      const lobby = LocalStorageMockBackend.getLobby(lobbyCode);
-      
-      if (!lobby) {
-        return null;
-      }
-      
-      // Sort players by score
-      lobby.players.sort((a, b) => b.score - a.score);
-      
-      // Save the final state
-      LocalStorageMockBackend.saveLobby(lobby);
-      
-      return lobby;
-    } catch (error) {
-      console.error('Error ending game:', error);
-      return null;
-    }
-  },
-  
-  // Leave a lobby
-  leaveLobby: async (lobbyCode: string, playerId: string): Promise<boolean> => {
-    try {
-      // In a real implementation, this would be an API call
-      // For now, we'll simulate it
-      const lobby = LocalStorageMockBackend.getLobby(lobbyCode);
-      
-      if (!lobby) {
-        return false;
-      }
-      
-      // Remove the player
-      lobby.players = lobby.players.filter(p => p.id !== playerId);
-      
-      // If no players left, delete the lobby
-      if (lobby.players.length === 0) {
-        const lobbies = LocalStorageMockBackend.getLobbies();
-        delete lobbies[lobbyCode];
-        LocalStorageMockBackend.saveLobbies(lobbies);
-        return true;
-      }
-      
-      // If the host left, assign a new host
-      if (!lobby.players.some(p => p.isHost) && lobby.players.length > 0) {
-        lobby.players[0].isHost = true;
-        lobby.players[0].avatar = '👑';
-      }
-      
-      // Save the updated lobby
-      LocalStorageMockBackend.saveLobby(lobby);
-      
-      return true;
-    } catch (error) {
-      console.error('Error leaving lobby:', error);
-      return false;
-    }
+    
+    return quiz;
+    
+  } catch (error) {
+    console.error('Failed to generate quiz:', error);
+    throw new Error('Failed to generate quiz');
   }
+};
+
+// Helper function to get high scores from local storage
+const getHighScores = (): QuizResult[] => {
+  try {
+    const storedScores = localStorage.getItem('flagQuizHighScores');
+    return storedScores ? JSON.parse(storedScores) : [];
+  } catch (error) {
+    console.error('Failed to get high scores:', error);
+    return [];
+  }
+};
+
+// Helper function to save a new score
+const saveScore = (result: QuizResult): void => {
+  try {
+    const highScores = getHighScores();
+    highScores.push(result);
+    localStorage.setItem('flagQuizHighScores', JSON.stringify(highScores));
+  } catch (error) {
+    console.error('Failed to save score:', error);
+  }
+};
+
+// Helper function to extract flag colors (simplified approach)
+const extractFlagColors = (countryName: string): string[] => {
+  // This is a simplified approach - in reality would need image processing
+  // Just returning some common colors based on country names for demonstration
+  const colorMap: Record<string, string[]> = {
+    'Chad': ['blue', 'yellow', 'red'],
+    'Romania': ['blue', 'yellow', 'red'],
+    'Belgium': ['black', 'yellow', 'red'],
+    'Germany': ['black', 'red', 'yellow'],
+    'Russia': ['white', 'blue', 'red'],
+    'France': ['blue', 'white', 'red'],
+    'Netherlands': ['red', 'white', 'blue'],
+    'Italy': ['green', 'white', 'red'],
+    'Ireland': ['green', 'white', 'orange'],
+    'Ivory Coast': ['orange', 'white', 'green'],
+    'Hungary': ['red', 'white', 'green'],
+    'Bulgaria': ['white', 'green', 'red'],
+    // Add more as needed
+  };
+  
+  return colorMap[countryName] || [];
+};
+
+// Helper function to check if two arrays have at least one common element
+const hasCommonElements = (array1: string[], array2: string[]): boolean => {
+  return array1.some(item => array2.includes(item));
+};
+
+const flagQuizApi = {
+  generateQuiz,
+  getHighScores,
+  saveScore
 };
 
 export default flagQuizApi;

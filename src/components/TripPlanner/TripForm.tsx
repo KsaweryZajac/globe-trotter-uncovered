@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { format, addDays, differenceInDays } from 'date-fns';
@@ -156,7 +155,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-4">
             <div>
               <Label>Start Date</Label>
               <Popover>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
@@ -24,14 +25,25 @@ const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryName, countr
     // Construct query parameters based on available data
     let queryParams;
     
-    if (countryCode && countryCode.match(/^[A-Z]{2,3}$/)) {
+    if (latlng && latlng.length === 2) {
+      // If we have coordinates, use them with appropriate zoom level
+      const [lat, lng] = latlng;
+      
+      // Use different buffer sizes based on country size (approximated by checking if it's a small island nation)
+      let zoomLevel = 5; // Default zoom level for most countries
+      
+      // Adjust zoom level based on country name (just a rough estimation)
+      if (['Vatican City', 'Monaco', 'Nauru', 'Tuvalu', 'San Marino', 'Liechtenstein', 'Malta', 'Maldives', 'Barbados', 'Bahrain', 'Singapore'].includes(countryName)) {
+        zoomLevel = 9; // Small countries need closer zoom
+      } else if (['Russia', 'Canada', 'United States', 'Brazil', 'Australia', 'China', 'India'].includes(countryName)) {
+        zoomLevel = 3; // Large countries need wider zoom
+      }
+      
+      queryParams = `?bbox=${lng-20},${lat-20},${lng+20},${lat+20}&layer=mapnik&marker=${lat},${lng}`;
+      queryParams += `&zoom=${zoomLevel}`;
+    } else if (countryCode && countryCode.match(/^[A-Z]{2,3}$/)) {
       // If we have a valid country code, use it for better precision
       queryParams = `?bbox=-180,-85,180,85&layer=mapnik&relation=${countryCode}`;
-    } else if (latlng && latlng.length === 2) {
-      // If we have coordinates, use them
-      const [lat, lng] = latlng;
-      const buffer = 5; // Add some buffer around the coordinates for better visibility
-      queryParams = `?bbox=${lng-buffer},${lat-buffer},${lng+buffer},${lat+buffer}&layer=mapnik&marker=${lat},${lng}`;
     } else {
       // Otherwise, use country name
       queryParams = `?query=${encodeURIComponent(cleanCountryName)}`;

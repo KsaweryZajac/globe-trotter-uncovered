@@ -103,6 +103,9 @@ const CountryCard: React.FC<CountryCardProps> = ({
     }
   }
 
+  // Check if coat of arms exists and is not empty
+  const hasCoatOfArms = country.coatOfArms && (country.coatOfArms.svg || country.coatOfArms.png);
+
   return (
     <Card className="shadow-md hover:shadow-lg transition-shadow h-full">
       <CardHeader>
@@ -116,18 +119,36 @@ const CountryCard: React.FC<CountryCardProps> = ({
       </CardHeader>
       
       <CardContent className="space-y-4">
-        {/* Flag */}
-        <div className="flex justify-center">
-          <img
-            src={country.flags.svg || country.flags.png}
-            alt={`Flag of ${country.name.common}`}
-            className="rounded-md max-w-full h-[120px]"
-            onError={(e) => {
-              // Fallback if flag image fails to load
-              const target = e.target as HTMLImageElement;
-              target.src = `https://via.placeholder.com/320x180?text=${encodeURIComponent(country.name.common)}+Flag`;
-            }}
-          />
+        {/* Flag and Coat of Arms */}
+        <div className={`flex ${hasCoatOfArms ? 'justify-between' : 'justify-center'} gap-4`}>
+          <div className={hasCoatOfArms ? "flex-1" : "max-w-[180px]"}>
+            <p className="text-xs text-muted-foreground mb-1">Flag</p>
+            <img
+              src={country.flags.svg || country.flags.png}
+              alt={`Flag of ${country.name.common}`}
+              className="rounded-md w-full h-auto shadow-sm"
+              style={{ maxHeight: "100px" }}
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                target.src = `https://via.placeholder.com/320x180?text=${encodeURIComponent(country.name.common)}+Flag`;
+              }}
+            />
+          </div>
+          {hasCoatOfArms && (
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground mb-1">Coat of Arms</p>
+              <img
+                src={country.coatOfArms.svg || country.coatOfArms.png}
+                alt={`Coat of Arms of ${country.name.common}`}
+                className="rounded-md w-full h-auto shadow-sm object-contain"
+                style={{ maxHeight: "100px" }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = `https://via.placeholder.com/320x180?text=${encodeURIComponent(country.name.common)}+Coat+of+Arms`;
+                }}
+              />
+            </div>
+          )}
         </div>
         
         {/* Country info */}
@@ -165,25 +186,27 @@ const CountryCard: React.FC<CountryCardProps> = ({
         )}
       </CardContent>
       
-      <CardFooter className="flex justify-between">
-        <Button 
-          variant="default" 
-          size="sm" 
-          onClick={onExploreClick}
-        >
-          Explore
-        </Button>
-        
-        <Button
-          variant={isFavorite ? "destructive" : "outline"}
-          size="icon"
-          onClick={onAddToFavorites}
-          title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-        >
-          <Heart 
-            className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} 
-          />
-        </Button>
+      <CardFooter className="flex justify-center">
+        <div className="flex gap-4">
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={onExploreClick}
+          >
+            Explore
+          </Button>
+          
+          <Button
+            variant={isFavorite ? "destructive" : "outline"}
+            size="icon"
+            onClick={onAddToFavorites}
+            title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart 
+              className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} 
+            />
+          </Button>
+        </div>
       </CardFooter>
     </Card>
   );

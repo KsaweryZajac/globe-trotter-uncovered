@@ -430,7 +430,7 @@ const Search = () => {
                   </TabsTrigger>
                   <TabsTrigger value="news" className="flex items-center gap-1">
                     <Globe className="h-4 w-4" />
-                    <span className="hidden md:inline">News</span>
+                    <span className="hidden md:inline">Nice to Know</span>
                   </TabsTrigger>
                   <TabsTrigger value="weather" className="flex items-center gap-1">
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

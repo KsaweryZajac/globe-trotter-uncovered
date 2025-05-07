@@ -61,48 +61,72 @@ const TripPlanner = () => {
   }, []);
 
   const createNewTrip = (newTrip: Trip) => {
-    // Save the trip to localStorage
-    const updatedTrips = isEditingTrip 
-      ? trips.map(trip => trip.id === newTrip.id ? newTrip : trip)
-      : [...trips, newTrip];
-    
-    setTrips(updatedTrips);
-    setSelectedTrip(newTrip);
-    
-    // Save to localStorage
-    localStorage.setItem('savedTrips', JSON.stringify(updatedTrips));
-    
-    // Show success message
-    toast.success(isEditingTrip ? 'Trip updated successfully' : 'Trip created successfully');
-    setIsEditingTrip(false);
-    
-    // Switch to saved trips tab to see the new trip
-    setTimeout(() => {
-      setActiveTab('savedTrips');
-    }, 500);
+    try {
+      // Save the trip to localStorage
+      const updatedTrips = isEditingTrip 
+        ? trips.map(trip => trip.id === newTrip.id ? newTrip : trip)
+        : [...trips, newTrip];
+      
+      setTrips(updatedTrips);
+      setSelectedTrip(newTrip);
+      
+      // Save to localStorage
+      localStorage.setItem('savedTrips', JSON.stringify(updatedTrips));
+      
+      // Show success message
+      toast.success(isEditingTrip ? 'Trip updated successfully' : 'Trip created successfully');
+      setIsEditingTrip(false);
+      
+      // Switch to saved trips tab to see the new trip
+      setTimeout(() => {
+        setActiveTab('savedTrips');
+      }, 100);
+    } catch (error) {
+      console.error('Failed to save trip:', error);
+      toast.error('Failed to save trip. Please try again.');
+    }
   };
 
   const selectTrip = (trip: Trip) => {
-    setSelectedTrip(trip);
-    setIsEditingTrip(true);
-    setActiveTab('newTrip');
+    try {
+      // Make a deep copy of the trip to avoid reference issues
+      const tripCopy = JSON.parse(JSON.stringify(trip));
+      setSelectedTrip(tripCopy);
+      setIsEditingTrip(true);
+      setActiveTab('newTrip');
+    } catch (error) {
+      console.error('Failed to select trip:', error);
+      toast.error('Failed to load trip details');
+    }
   };
 
   const viewTrip = (trip: Trip) => {
-    setSelectedTrip(trip);
-    // Keep on the saved trips tab
+    try {
+      // Make a deep copy of the trip to avoid reference issues
+      const tripCopy = JSON.parse(JSON.stringify(trip));
+      setSelectedTrip(tripCopy);
+      // Keep on the saved trips tab
+    } catch (error) {
+      console.error('Failed to view trip:', error);
+      toast.error('Failed to load trip details');
+    }
   };
 
   const deleteTrip = (tripId: string) => {
-    const updatedTrips = trips.filter(t => t.id !== tripId);
-    setTrips(updatedTrips);
-    localStorage.setItem('savedTrips', JSON.stringify(updatedTrips));
-    
-    if (selectedTrip && selectedTrip.id === tripId) {
-      setSelectedTrip(null);
+    try {
+      const updatedTrips = trips.filter(t => t.id !== tripId);
+      setTrips(updatedTrips);
+      localStorage.setItem('savedTrips', JSON.stringify(updatedTrips));
+      
+      if (selectedTrip && selectedTrip.id === tripId) {
+        setSelectedTrip(null);
+      }
+      
+      toast.success('Trip deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete trip:', error);
+      toast.error('Failed to delete trip');
     }
-    
-    toast.success('Trip deleted successfully');
   };
 
   const startNewTrip = () => {
@@ -113,6 +137,19 @@ const TripPlanner = () => {
 
   // Create empty destinations array for initial state
   const emptyDestinations: any[] = [];
+
+  // Handle tab change safely
+  const handleTabChange = (value: string) => {
+    // If switching to saved trips, ensure we don't have an edit in progress
+    if (value === 'savedTrips' && isEditingTrip) {
+      if (window.confirm('You have unsaved changes. Are you sure you want to leave this page?')) {
+        setIsEditingTrip(false);
+        setActiveTab(value);
+      }
+    } else {
+      setActiveTab(value);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
@@ -133,7 +170,7 @@ const TripPlanner = () => {
           </p>
         </motion.div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           <div className="flex justify-center mb-6 md:mb-8">
             <TabsList className="grid grid-cols-2 w-full max-w-md mx-auto">
               <TabsTrigger value="newTrip" id="newTripTab" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
