@@ -3,7 +3,6 @@ import { useState } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Country, NewsArticle, Weather } from '@/services/api';
 import Header from '@/components/Header';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import CountryCard from '@/components/CountryCard'; 

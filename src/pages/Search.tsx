@@ -312,7 +312,7 @@ const Search = () => {
                         }}
                       />
                     </div>
-                    {country.coatOfArms && (country.coatOfArms.svg || country.coatOfArms.png) && (
+                    {country.coatOfArms && (
                       <div className="flex-1">
                         <p className="text-xs text-muted-foreground mb-1">Coat of Arms</p>
                         <img

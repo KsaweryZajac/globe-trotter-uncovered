@@ -1,29 +1,28 @@
-
 export interface Country {
   name: {
     common: string;
     official: string;
+    nativeName?: Record<string, { official: string; common: string }>;
   };
   cca2: string;
   cca3: string;
-  currencies: {
-    [key: string]: {
-      name: string;
-      symbol: string;
-    };
-  };
-  capital: string[];
+  capital?: string[];
   region: string;
-  subregion: string;
-  languages: {
-    [key: string]: string;
-  };
+  subregion?: string;
+  languages?: Record<string, string>;
+  currencies?: Record<string, { name: string; symbol: string }>;
   population: number;
+  area?: number;
   flags: {
-    svg: string;
     png: string;
+    svg: string;
+    alt?: string;
   };
-  latlng: number[];
+  coatOfArms?: {
+    png?: string;
+    svg?: string;
+  };
+  latlng: [number, number];
   borders?: string[];
 }
 
