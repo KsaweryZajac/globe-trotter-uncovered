@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -105,7 +104,9 @@ const FlagQuiz: React.FC = () => {
     
     // Move to next question or end game
     if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+      setTimeout(() => {
+        setCurrentQuestionIndex(prevIndex => prevIndex + 1);
+      }, 1500); // Give time to see the result
     } else {
       // Game over - record end time
       setEndTime(Date.now());

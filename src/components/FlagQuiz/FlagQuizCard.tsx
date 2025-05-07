@@ -75,8 +75,14 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
   const loadQuestions = async () => {
     setLoading(true);
     try {
-      const quizQuestions = await flagQuizApi.generateQuiz();
-      setQuestions(quizQuestions);
+      const quizQuestions = await flagQuizApi.generateQuiz(10);
+      // Transform the questions into the format we need
+      const formattedQuestions = quizQuestions.map(question => ({
+        flag: question.correctCountry.flags.png || question.correctCountry.flags.svg,
+        correctAnswer: question.correctCountry.name.common,
+        options: question.options.map(option => option.name.common)
+      }));
+      setQuestions(formattedQuestions);
     } catch (error) {
       console.error("Failed to load questions:", error);
       toast({
@@ -213,6 +219,9 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
                   className={`w-60 h-36 object-contain rounded-md transition-opacity duration-300 ${flagLoaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={handleImageLoad}
                 />
+              </div>
+              <div className="text-center mb-4">
+                <h3 className="font-medium">Which country does this flag belong to?</h3>
               </div>
               <div className="flex flex-col space-y-2">
                 {currentQuestion.options.map((option: string) => (

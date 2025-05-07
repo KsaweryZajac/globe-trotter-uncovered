@@ -9,18 +9,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Timer } from 'lucide-react';
+import flagQuizApi, { DifficultyLevel } from '@/services/flagQuizApi';
 
 interface HighScore {
   name: string;
   score: number;
   date: string;
   time?: number; // Time in seconds
+  difficulty?: DifficultyLevel; // Added difficulty property
 }
 
 const FlagQuiz = () => {
   const [activeTab, setActiveTab] = useState("solo");
   const [userName, setUserName] = useState("");
   const [gameStarted, setGameStarted] = useState(false);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>("easy");
 
   // Solo game state
   const [highScores, setHighScores] = useState<HighScore[]>(() => {
@@ -35,7 +38,8 @@ const FlagQuiz = () => {
       name: userName,
       score: score,
       date: new Date().toISOString(),
-      time: timeInSeconds
+      time: timeInSeconds,
+      difficulty: selectedDifficulty
     };
     
     const updatedScores = [...highScores, newScore]
@@ -66,6 +70,11 @@ const FlagQuiz = () => {
     hidden: { opacity: 0, y: 20 },
     show: { opacity: 1, y: 0 }
   };
+
+  // Filter scores by difficulty
+  const filteredScores = selectedDifficulty 
+    ? highScores.filter(score => score.difficulty === selectedDifficulty)
+    : highScores;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-background/90">
@@ -111,6 +120,23 @@ const FlagQuiz = () => {
                     className="w-full p-3 rounded-md border mb-4 bg-background"
                     maxLength={20}
                   />
+                  
+                  <div className="mb-4">
+                    <h3 className="font-medium mb-2">Select Difficulty:</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['beginner', 'easy', 'medium', 'hard'] as DifficultyLevel[]).map((difficulty) => (
+                        <Button 
+                          key={difficulty}
+                          variant={selectedDifficulty === difficulty ? "default" : "outline"}
+                          onClick={() => setSelectedDifficulty(difficulty)}
+                          className="capitalize"
+                        >
+                          {difficulty}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  
                   <Button 
                     className="w-full gradient-primary text-white" 
                     onClick={() => setGameStarted(true)}
@@ -143,7 +169,19 @@ const FlagQuiz = () => {
                   High Scores
                 </h2>
                 
-                {highScores.length === 0 ? (
+                <div className="mb-4">
+                  <Tabs defaultValue="all">
+                    <TabsList className="w-full mb-4">
+                      <TabsTrigger value="all" onClick={() => setSelectedDifficulty(undefined as any)}>All</TabsTrigger>
+                      <TabsTrigger value="beginner" onClick={() => setSelectedDifficulty("beginner")}>Beginner</TabsTrigger>
+                      <TabsTrigger value="easy" onClick={() => setSelectedDifficulty("easy")}>Easy</TabsTrigger>
+                      <TabsTrigger value="medium" onClick={() => setSelectedDifficulty("medium")}>Medium</TabsTrigger>
+                      <TabsTrigger value="hard" onClick={() => setSelectedDifficulty("hard")}>Hard</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+                
+                {filteredScores.length === 0 ? (
                   <motion.div 
                     variants={itemAnimation}
                     className="text-center p-8"
@@ -159,11 +197,12 @@ const FlagQuiz = () => {
                           <TableHead>Player</TableHead>
                           <TableHead>Score</TableHead>
                           <TableHead>Time</TableHead>
+                          <TableHead>Difficulty</TableHead>
                           <TableHead>Date</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {highScores.map((score, index) => (
+                        {filteredScores.map((score, index) => (
                           <motion.tr 
                             variants={itemAnimation}
                             key={index} 
@@ -181,7 +220,7 @@ const FlagQuiz = () => {
                                 <span className="font-bold">{score.score}</span>
                                 <div className="ml-2 w-24">
                                   <Progress 
-                                    value={highScores[0].score > 0 ? (score.score / highScores[0].score) * 100 : 0} 
+                                    value={filteredScores[0].score > 0 ? (score.score / filteredScores[0].score) * 100 : 0} 
                                     className="h-2" 
                                   />
                                 </div>
@@ -192,6 +231,9 @@ const FlagQuiz = () => {
                                 <Timer className="h-3 w-3 mr-1" />
                                 {score.time ? `${score.time}s` : 'N/A'}
                               </div>
+                            </TableCell>
+                            <TableCell className="capitalize">
+                              {score.difficulty || 'Unknown'}
                             </TableCell>
                             <TableCell>{new Date(score.date).toLocaleDateString()}</TableCell>
                           </motion.tr>
