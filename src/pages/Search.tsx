@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Header from '@/components/Header';
@@ -210,8 +209,8 @@ const Search = () => {
   // Format population with commas
   const formattedPopulation = country?.population?.toLocaleString() || 'N/A';
   
-  // Get area if available - using optional chaining for safety
-  const area = country?.area ? `${country?.area.toLocaleString()} km²` : 'N/A';
+  // Get area if available - using optional chaining and hasOwnProperty for safety
+  const area = country && 'area' in country ? `${country.area.toLocaleString()} km²` : 'N/A';
 
   // Calculate languages
   const languages = country?.languages 
@@ -298,18 +297,36 @@ const Search = () => {
                 </CardHeader>
                 
                 <CardContent className="space-y-4">
-                  {/* Flag */}
-                  <div className="flex justify-center">
-                    <img
-                      src={country.flags.svg || country.flags.png}
-                      alt={`Flag of ${country.name.common}`}
-                      className="rounded-md max-w-full h-auto shadow-sm"
-                      style={{ maxHeight: "150px" }}
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.src = `https://via.placeholder.com/320x180?text=${encodeURIComponent(country.name.common)}+Flag`;
-                      }}
-                    />
+                  {/* Flag and Coat of Arms */}
+                  <div className="flex justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground mb-1">Flag</p>
+                      <img
+                        src={country.flags.svg || country.flags.png}
+                        alt={`Flag of ${country.name.common}`}
+                        className="rounded-md w-full h-auto shadow-sm"
+                        style={{ maxHeight: "100px" }}
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = `https://via.placeholder.com/320x180?text=${encodeURIComponent(country.name.common)}+Flag`;
+                        }}
+                      />
+                    </div>
+                    {country.coatOfArms && (country.coatOfArms.svg || country.coatOfArms.png) && (
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground mb-1">Coat of Arms</p>
+                        <img
+                          src={country.coatOfArms.svg || country.coatOfArms.png}
+                          alt={`Coat of Arms of ${country.name.common}`}
+                          className="rounded-md w-full h-auto shadow-sm"
+                          style={{ maxHeight: "100px" }}
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = `https://via.placeholder.com/320x180?text=${encodeURIComponent(country.name.common)}+Coat+of+Arms`;
+                          }}
+                        />
+                      </div>
+                    )}
                   </div>
                   
                   {/* Quick Facts */}
@@ -371,7 +388,11 @@ const Search = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <CountryBorderMap countryName={country.name.common} countryCode={country.cca3} />
+                  <CountryBorderMap 
+                    countryName={country.name.common} 
+                    countryCode={country.cca3} 
+                    latlng={country.latlng}
+                  />
                 </CardContent>
               </Card>
             </motion.div>

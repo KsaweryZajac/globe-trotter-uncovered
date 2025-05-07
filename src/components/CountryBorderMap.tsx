@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
@@ -7,9 +6,10 @@ import { MapIcon } from 'lucide-react';
 interface CountryBorderMapProps {
   countryName: string;
   countryCode?: string;
+  latlng?: number[];
 }
 
-const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryName, countryCode }) => {
+const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryName, countryCode, latlng }) => {
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapUrl, setMapUrl] = useState('');
   
@@ -21,21 +21,28 @@ const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryName, countr
     // Using dedicated OpenStreetMap export service
     const baseUrl = 'https://www.openstreetmap.org/export/embed.html';
     
-    // Construct query parameters - try to use code or name
+    // Construct query parameters based on available data
     let queryParams;
-    if (countryCode) {
-      queryParams = `?bbox=-180,-85,180,85&layer=mapnik&marker=0,0&relation=${countryCode.toLowerCase()}`;
+    
+    if (countryCode && countryCode.match(/^[A-Z]{2,3}$/)) {
+      // If we have a valid country code, use it for better precision
+      queryParams = `?bbox=-180,-85,180,85&layer=mapnik&relation=${countryCode}`;
+    } else if (latlng && latlng.length === 2) {
+      // If we have coordinates, use them
+      const [lat, lng] = latlng;
+      const buffer = 5; // Add some buffer around the coordinates for better visibility
+      queryParams = `?bbox=${lng-buffer},${lat-buffer},${lng+buffer},${lat+buffer}&layer=mapnik&marker=${lat},${lng}`;
     } else {
-      // If no country code available, use name-based search
-      queryParams = `?bbox=-180,-85,180,85&layer=mapnik&query=${encodeURIComponent(cleanCountryName)}`;
+      // Otherwise, use country name
+      queryParams = `?query=${encodeURIComponent(cleanCountryName)}`;
     }
     
     setMapUrl(`${baseUrl}${queryParams}`);
-  }, [countryName, countryCode, cleanCountryName]);
+  }, [countryName, countryCode, latlng, cleanCountryName]);
 
   // Create a full view URL for the "View interactive map" link
   const viewMapUrl = countryCode ? 
-    `https://www.openstreetmap.org/relation/${countryCode.toLowerCase()}` : 
+    `https://www.openstreetmap.org/relation/${countryCode}` : 
     `https://www.openstreetmap.org/search?query=${encodeURIComponent(cleanCountryName)}`;
   
   return (
