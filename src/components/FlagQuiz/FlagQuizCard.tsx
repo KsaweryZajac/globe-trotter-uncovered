@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
 import { ArrowRightIcon, FlagIcon, XIcon, CheckIcon, HeartIcon, Timer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getFlagQuiz } from '@/services/flagQuizApi';
+import flagQuizApi from '@/services/flagQuizApi';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 
@@ -75,7 +75,7 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
   const loadQuestions = async () => {
     setLoading(true);
     try {
-      const quizQuestions = await getFlagQuiz();
+      const quizQuestions = await flagQuizApi.generateQuiz();
       setQuestions(quizQuestions);
     } catch (error) {
       console.error("Failed to load questions:", error);
