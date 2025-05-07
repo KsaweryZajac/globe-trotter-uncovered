@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -6,6 +7,15 @@ import FlagQuizCard from '@/components/FlagQuiz/FlagQuizCard';
 import Header from '@/components/Header';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Timer } from 'lucide-react';
+
+interface HighScore {
+  name: string;
+  score: number;
+  date: string;
+  time?: number; // Time in seconds
+}
 
 const FlagQuiz = () => {
   const [activeTab, setActiveTab] = useState("solo");
@@ -13,21 +23,29 @@ const FlagQuiz = () => {
   const [gameStarted, setGameStarted] = useState(false);
 
   // Solo game state
-  const [highScores, setHighScores] = useState(() => {
+  const [highScores, setHighScores] = useState<HighScore[]>(() => {
     const saved = localStorage.getItem('flagQuizHighScores');
     return saved ? JSON.parse(saved) : [];
   });
 
-  const handleScoreSubmit = (score: number) => {
+  const handleScoreSubmit = (score: number, timeInSeconds: number) => {
     if (!userName.trim()) return;
     
     const newScore = {
       name: userName,
       score: score,
       date: new Date().toISOString(),
+      time: timeInSeconds
     };
     
-    const updatedScores = [...highScores, newScore].sort((a, b) => b.score - a.score).slice(0, 10);
+    const updatedScores = [...highScores, newScore]
+      // Sort primarily by score (highest first), then by time (lowest first if scores are equal)
+      .sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return (a.time || 999) - (b.time || 999);
+      })
+      .slice(0, 10);
+      
     setHighScores(updatedScores);
     localStorage.setItem('flagQuizHighScores', JSON.stringify(updatedScores));
     setGameStarted(false);
@@ -134,30 +152,31 @@ const FlagQuiz = () => {
                   </motion.div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left py-3 px-4">Rank</th>
-                          <th className="text-left py-3 px-4">Player</th>
-                          <th className="text-left py-3 px-4">Score</th>
-                          <th className="text-left py-3 px-4">Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Rank</TableHead>
+                          <TableHead>Player</TableHead>
+                          <TableHead>Score</TableHead>
+                          <TableHead>Time</TableHead>
+                          <TableHead>Date</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
                         {highScores.map((score, index) => (
                           <motion.tr 
                             variants={itemAnimation}
                             key={index} 
                             className="border-b hover:bg-secondary/50 transition-colors"
                           >
-                            <td className="py-3 px-4">
+                            <TableCell>
                               <div className="flex items-center">
                                 {index === 0 && <span className="text-yellow-500 mr-1">🏆</span>}
                                 #{index + 1}
                               </div>
-                            </td>
-                            <td className="py-3 px-4">{score.name}</td>
-                            <td className="py-3 px-4">
+                            </TableCell>
+                            <TableCell>{score.name}</TableCell>
+                            <TableCell>
                               <div className="flex items-center">
                                 <span className="font-bold">{score.score}</span>
                                 <div className="ml-2 w-24">
@@ -167,12 +186,18 @@ const FlagQuiz = () => {
                                   />
                                 </div>
                               </div>
-                            </td>
-                            <td className="py-3 px-4">{new Date(score.date).toLocaleDateString()}</td>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                <Timer className="h-3 w-3 mr-1" />
+                                {score.time ? `${score.time}s` : 'N/A'}
+                              </div>
+                            </TableCell>
+                            <TableCell>{new Date(score.date).toLocaleDateString()}</TableCell>
                           </motion.tr>
                         ))}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 )}
               </Card>

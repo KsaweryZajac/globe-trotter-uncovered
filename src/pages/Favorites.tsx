@@ -98,12 +98,6 @@ const Favorites = () => {
                 onExploreClick={() => {}}
                 onAddToFavorites={() => removeFavorite(selectedCountry.cca3)}
                 isFavorite={true}
-                newsLoading={newsLoading}
-                weatherLoading={weatherLoading}
-                newsError={newsError}
-                weatherError={weatherError}
-                news={news}
-                weather={weather}
               />
             ) : (
               <div className="bg-card text-center p-10 rounded-lg border border-border shadow-sm h-full flex flex-col justify-center items-center">

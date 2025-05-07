@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Progress } from '@/components/ui/progress';
-import { ArrowRightIcon, FlagIcon, XIcon, CheckIcon, HeartIcon } from 'lucide-react';
+import { ArrowRightIcon, FlagIcon, XIcon, CheckIcon, HeartIcon, Timer } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getFlagQuiz } from '@/services/flagQuizApi';
 import { useToast } from '@/hooks/use-toast';
@@ -12,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 
 export interface FlagQuizProps {
   onBackToMenu: () => void;
-  onScoreSubmit: (score: number) => void;
+  onScoreSubmit: (score: number, timeInSeconds: number) => void;
 }
 
 const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) => {
@@ -25,7 +25,33 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
   const [quizComplete, setQuizComplete] = useState(false);
   const [streak, setStreak] = useState(0);
   const [flagLoaded, setFlagLoaded] = useState(false);
+  const [startTime, setStartTime] = useState<number>(0);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [isTimerRunning, setIsTimerRunning] = useState<boolean>(false);
   const { toast } = useToast();
+
+  // Initialize timer when questions load
+  useEffect(() => {
+    if (questions.length > 0 && !isTimerRunning) {
+      setStartTime(Date.now());
+      setIsTimerRunning(true);
+    }
+  }, [questions]);
+
+  // Update timer every second
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+    
+    if (isTimerRunning && !quizComplete) {
+      intervalId = setInterval(() => {
+        setElapsedTime(Math.floor((Date.now() - startTime) / 1000));
+      }, 1000);
+    }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [isTimerRunning, startTime, quizComplete]);
 
   useEffect(() => {
     loadQuestions();
@@ -90,7 +116,8 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
       setFlagLoaded(false);
     } else {
       setQuizComplete(true);
-      onScoreSubmit(score);
+      setIsTimerRunning(false);
+      onScoreSubmit(score, elapsedTime);
     }
   };
 
@@ -101,6 +128,9 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
     setScore(0);
     setQuizComplete(false);
     setStreak(0);
+    setStartTime(Date.now());
+    setElapsedTime(0);
+    setIsTimerRunning(true);
     loadQuestions();
   };
 
@@ -109,6 +139,12 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
   };
 
   const currentQuestion = questions[currentQuestionIndex];
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
 
   const cardVariants = {
     hidden: { opacity: 0, x: -50 },
@@ -126,10 +162,17 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
       <CardHeader className="flex flex-col space-y-1.5 p-4">
         <div className="flex justify-between items-center">
           <CardTitle className="text-lg font-semibold">Flag Quiz</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onBackToMenu}>
-            <XIcon className="h-4 w-4 mr-2" />
-            Back to Menu
-          </Button>
+          <div className="flex items-center gap-2">
+            {/* Timer display */}
+            <div className="flex items-center text-sm text-muted-foreground">
+              <Timer className="h-4 w-4 mr-1" />
+              {formatTime(elapsedTime)}
+            </div>
+            <Button variant="ghost" size="sm" onClick={onBackToMenu}>
+              <XIcon className="h-4 w-4 mr-2" />
+              Back to Menu
+            </Button>
+          </div>
         </div>
         <Progress value={(currentQuestionIndex / questions.length) * 100} />
       </CardHeader>
@@ -146,6 +189,10 @@ const FlagQuizCard: React.FC<FlagQuizProps> = ({ onBackToMenu, onScoreSubmit }) 
           <div className="flex flex-col space-y-4 items-center justify-center h-full">
             <h2 className="text-2xl font-bold">Quiz Complete!</h2>
             <p className="text-lg">Your Score: {score} / {questions.length}</p>
+            <p className="text-md flex items-center">
+              <Timer className="h-4 w-4 mr-1" />
+              Your Time: {formatTime(elapsedTime)}
+            </p>
             <Button onClick={resetQuiz}>Play Again</Button>
           </div>
         ) : currentQuestion ? (
