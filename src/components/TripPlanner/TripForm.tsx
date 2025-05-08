@@ -1,20 +1,18 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
-import { format, addDays, differenceInDays } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { cn } from '@/lib/utils';
-import { CalendarIcon, PlusIcon, Save, Home } from 'lucide-react';
+import { Save } from 'lucide-react';
 import type { Country } from '@/services/api';
 import { PointOfInterest } from '@/services/tripPlannerApi';
 import DestinationSelector from './DestinationSelector';
-import TripCostEstimate from './TripCostEstimate';
 import TripCostSummary from './TripCostSummary';
+import TripTitleInput from './FormComponents/TripTitleInput';
+import HomeCountrySelector from './FormComponents/HomeCountrySelector';
+import DateRangePicker from './FormComponents/DateRangePicker';
+import DestinationsList from './FormComponents/DestinationsList';
 
 export interface TripDestination {
   id: string;
@@ -171,139 +169,32 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
           <CardDescription>Fill in the details to create your personalized travel itinerary</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="trip-title">Trip Title</Label>
-            <Input 
-              id="trip-title"
-              placeholder="My Amazing Adventure"
-              value={tripTitle}
-              onChange={(e) => setTripTitle(e.target.value)}
-              className="mt-1"
-            />
-          </div>
+          <TripTitleInput 
+            title={tripTitle} 
+            setTitle={setTripTitle} 
+          />
           
-          <div>
-            <Label htmlFor="home-country" className="flex items-center">
-              <HomeIcon className="h-4 w-4 mr-1" />
-              Your Home Country
-            </Label>
-            <select
-              id="home-country"
-              value={homeCountry}
-              onChange={(e) => setHomeCountry(e.target.value)}
-              className="w-full px-3 py-2 mt-1 border rounded-md"
-            >
-              <option value="">-- Select your home country --</option>
-              {sortedCountries.map((country) => (
-                <option key={country.cca3} value={country.name.common}>
-                  {country.name.common}
-                </option>
-              ))}
-            </select>
-            <p className="text-sm text-muted-foreground mt-1">
-              This helps us calculate flight costs and provide relevant travel information
-            </p>
-          </div>
+          <HomeCountrySelector 
+            homeCountry={homeCountry} 
+            setHomeCountry={setHomeCountry} 
+            countries={sortedCountries} 
+          />
           
-          {/* Date selection */}
-          <div className="flex flex-col space-y-4">
-            <div>
-              <Label>Start Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal mt-1",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            
-            <div>
-              <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal mt-1",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "PPP") : <span>Pick a date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    disabled={(date) => startDate ? date < startDate : false}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
+          <DateRangePicker 
+            startDate={startDate}
+            endDate={endDate}
+            setStartDate={setStartDate}
+            setEndDate={setEndDate}
+          />
 
-          {/* Destinations section */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <Label>Destinations</Label>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={addDestination}
-              >
-                <PlusIcon className="h-4 w-4 mr-1" />
-                Add Destination
-              </Button>
-            </div>
-            
-            {destinations.length === 0 ? (
-              <div className="text-center p-4 border border-dashed rounded-md">
-                <p className="text-muted-foreground">No destinations added yet.</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-2"
-                  onClick={addDestination}
-                >
-                  <PlusIcon className="h-4 w-4 mr-1" />
-                  Add Your First Destination
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {destinations.map((destination, index) => (
-                  <DestinationSelector
-                    key={destination.id || index}
-                    countries={countries}
-                    destination={destination}
-                    savedCities={savedCities}
-                    onChange={(updatedDestination) => updateDestination(index, updatedDestination)}
-                    onRemove={() => removeDestination(index)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          <DestinationsList
+            destinations={destinations}
+            countries={countries}
+            savedCities={savedCities}
+            addDestination={addDestination}
+            updateDestination={updateDestination}
+            removeDestination={removeDestination}
+          />
 
           {/* Cost summary */}
           {destinations.length > 0 && tripDuration > 0 && (
