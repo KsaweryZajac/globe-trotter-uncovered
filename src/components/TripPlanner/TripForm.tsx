@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { format, addDays, differenceInDays } from 'date-fns';
@@ -10,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { CalendarIcon, PlusIcon, SaveIcon, TrashIcon, HomeIcon } from 'lucide-react';
+import { CalendarIcon, PlusIcon, Save, Home } from 'lucide-react';
 import type { Country } from '@/services/api';
 import { PointOfInterest } from '@/services/tripPlannerApi';
 import DestinationSelector from './DestinationSelector';
@@ -321,7 +320,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
               onClick={handleSaveTrip}
               disabled={!tripTitle || !startDate || !endDate || destinations.length === 0}
             >
-              <SaveIcon className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4 mr-2" />
               Save Trip
             </Button>
           </div>
