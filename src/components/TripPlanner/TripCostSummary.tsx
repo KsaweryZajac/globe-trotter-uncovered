@@ -39,7 +39,7 @@ const TripCostSummary: React.FC<TripCostSummaryProps> = ({
             <span className="font-medium">{destinations.length}</span>
           </li>
           
-          {destinations.map((dest, index) => dest.countryName && (
+          {destinations.map((dest) => dest.countryName && (
             <li key={dest.id} className="flex justify-between">
               <span className="text-muted-foreground">
                 {dest.countryName} {dest.cityName ? `(${dest.cityName})` : ''}: 

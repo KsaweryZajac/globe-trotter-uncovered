@@ -34,7 +34,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
           <Card key={trip.id} className="hover:bg-accent/5 transition-colors">
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
-                <CardTitle className="text-lg font-medium">{trip.name}</CardTitle>
+                <CardTitle className="text-lg font-medium">{trip.name || trip.title}</CardTitle>
                 <div className="flex space-x-1">
                   <Button 
                     variant="ghost" 
@@ -65,7 +65,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
                 </div>
                 <div>
                   <span className="text-muted-foreground">Starting from: </span>
-                  <span>{trip.startCountry}</span>
+                  <span>{trip.startCountry || trip.homeCountry || 'Not specified'}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Destinations: </span>
