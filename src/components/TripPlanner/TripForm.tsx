@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { format, addDays, differenceInDays } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,6 +64,8 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
     const lastDestination = destinations.length > 0 ? destinations[destinations.length - 1] : null;
     const defaultCountry = lastDestination ? lastDestination.country : sortedCountries[0];
 
+    if (!defaultCountry) return; // Guard against empty countries array
+
     setDestinations([...destinations, {
       country: defaultCountry,
       city: '',
@@ -101,7 +103,12 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
       destinations
     };
 
-    onSaveTrip(trip);
+    // Ensure onSaveTrip is a function before calling it
+    if (typeof onSaveTrip === 'function') {
+      onSaveTrip(trip);
+    } else {
+      console.error('onSaveTrip is not a function');
+    }
   };
 
   // Get the trip duration in days

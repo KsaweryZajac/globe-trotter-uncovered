@@ -14,7 +14,6 @@ import TripCostEstimate from '@/components/TripPlanner/TripCostEstimate';
 import TripExport from '@/components/TripPlanner/TripExport';
 import api from '@/services/api'; // Import the default export instead of named export
 import { useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 
 // Define mock trips for SavedTrips component
 const mockTrips = [
@@ -43,7 +42,7 @@ const TripPlanner = () => {
   // Fetch countries using the default exported API object
   const { data: countries = [] } = useQuery({
     queryKey: ['countries'],
-    queryFn: api.getAllCountries
+    queryFn: () => api.getAllCountries()  // Make sure this is a function call
   });
 
   // Load saved trips from localStorage
@@ -55,7 +54,6 @@ const TripPlanner = () => {
         setTrips(parsedTrips);
       } catch (e) {
         console.error('Failed to parse saved trips', e);
-        toast.error('Failed to load your saved trips');
       }
     }
   }, []);
@@ -73,17 +71,14 @@ const TripPlanner = () => {
       // Save to localStorage
       localStorage.setItem('savedTrips', JSON.stringify(updatedTrips));
       
-      // Show success message
-      toast.success(isEditingTrip ? 'Trip updated successfully' : 'Trip created successfully');
-      setIsEditingTrip(false);
-      
       // Switch to saved trips tab to see the new trip
       setTimeout(() => {
         setActiveTab('savedTrips');
       }, 100);
+
+      setIsEditingTrip(false);
     } catch (error) {
       console.error('Failed to save trip:', error);
-      toast.error('Failed to save trip. Please try again.');
     }
   };
 
@@ -96,7 +91,6 @@ const TripPlanner = () => {
       setActiveTab('newTrip');
     } catch (error) {
       console.error('Failed to select trip:', error);
-      toast.error('Failed to load trip details');
     }
   };
 
@@ -108,7 +102,6 @@ const TripPlanner = () => {
       // Keep on the saved trips tab
     } catch (error) {
       console.error('Failed to view trip:', error);
-      toast.error('Failed to load trip details');
     }
   };
 
@@ -121,11 +114,8 @@ const TripPlanner = () => {
       if (selectedTrip && selectedTrip.id === tripId) {
         setSelectedTrip(null);
       }
-      
-      toast.success('Trip deleted successfully');
     } catch (error) {
       console.error('Failed to delete trip:', error);
-      toast.error('Failed to delete trip');
     }
   };
 
