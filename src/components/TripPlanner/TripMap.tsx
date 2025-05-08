@@ -1,10 +1,16 @@
 
-import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import React, { useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { TripDestination } from './TripForm';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Country } from '@/services/api';
+
+interface TripMapProps {
+  destinations: TripDestination[];
+  countries: Country[];
+}
 
 // Fix for Leaflet marker icons
 const markerIcon = L.icon({
@@ -16,139 +22,100 @@ const markerIcon = L.icon({
   shadowSize: [41, 41]
 });
 
-interface TripMapProps {
-  destinations: TripDestination[];
-}
-
-interface MapPoint {
-  id: string;
-  name: string;
-  country: string;
-  city: string;
-  position: [number, number];
-  image?: string;
-  description?: string;
-  link?: string;
-}
-
-// Create a MapController component to handle map interactions
-// This separates the map control logic from the rendering
-const MapController: React.FC<{ points: MapPoint[] }> = ({ points }) => {
+// Helper component to fit map to markers
+const MapController = ({ coordinates }: { coordinates: [number, number][] }) => {
   const map = useMap();
   
   useEffect(() => {
-    if (points.length > 0) {
-      if (points.length === 1) {
+    if (coordinates.length > 0) {
+      if (coordinates.length === 1) {
         // If only one point, center on it with a good zoom level
-        const point = points[0];
-        map.setView(point.position, 9);
+        map.setView(coordinates[0], 6);
       } else {
         // Create bounds that include all points
-        const bounds = L.latLngBounds(points.map(p => L.latLng(p.position[0], p.position[1])));
-        map.fitBounds(bounds, { padding: [30, 30] });
+        const bounds = L.latLngBounds(coordinates.map(coord => L.latLng(coord[0], coord[1])));
+        map.fitBounds(bounds, { padding: [50, 50] });
       }
     }
-  }, [map, points]);
+  }, [coordinates, map]);
   
   return null;
 };
 
-const TripMap: React.FC<TripMapProps> = ({ destinations }) => {
-  // Create map points from destinations
-  const mapPoints: MapPoint[] = destinations.flatMap(dest => {
-    // Add city as a map point
-    const cityPoint: MapPoint = {
-      id: `city-${dest.city}`,
-      name: dest.city,
-      country: dest.country.name.common,
-      city: dest.city,
-      // Use position from country for city if we don't have specific coordinates
-      // This is a simplification - in a real app, you'd use a geocoding service
-      position: [
-        dest.country.latlng?.[0] ?? 0, 
-        dest.country.latlng?.[1] ?? 0
-      ]
-    };
-    
-    // Add selected POIs as map points
-    const poiPoints: MapPoint[] = (dest.selectedPOIs || [])
-      .filter(poi => poi.location)
-      .map(poi => ({
-        id: poi.id,
-        name: poi.name,
-        country: dest.country.name.common,
-        city: dest.city,
-        position: [
-          poi.location?.lat || 0,
-          poi.location?.lng || 0
-        ] as [number, number],
-        image: poi.image,
-        description: poi.description,
-        link: poi.link
-      }));
-    
-    return [cityPoint, ...poiPoints];
-  });
-
+const TripMap: React.FC<TripMapProps> = ({ destinations, countries }) => {
+  // Helper function to get coordinates for a country
+  const getCountryCoordinates = (countryName: string): [number, number] => {
+    const country = countries.find(c => c.name.common === countryName);
+    return country?.latlng ? [country.latlng[0], country.latlng[1]] : [0, 0];
+  };
+  
+  // Create coordinates array for destinations
+  const coordinates: [number, number][] = destinations
+    .filter(d => d.countryName)
+    .map(d => getCountryCoordinates(d.countryName));
+  
+  // Default coordinates if none are available
+  const defaultCoordinates: [number, number] = [20, 0];
+  const hasCoordinates = coordinates.length > 0;
+  
   return (
-    <Card className="mt-6">
+    <Card>
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Trip Map</CardTitle>
+        <CardTitle className="text-base font-medium">Trip Route</CardTitle>
       </CardHeader>
       <CardContent>
-        {mapPoints.length > 0 ? (
-          <div className="h-[400px] rounded-md overflow-hidden border">
+        <div className="h-[400px] w-full rounded-md overflow-hidden border">
+          {hasCoordinates ? (
             <MapContainer
-              center={[20, 0]} // Default center
-              zoom={2} // Default zoom
+              center={coordinates[0] || defaultCoordinates}
+              zoom={2}
               style={{ height: '100%', width: '100%' }}
+              scrollWheelZoom={false}
             >
-              <MapController points={mapPoints} />
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
-              {mapPoints.map(point => (
-                <Marker 
-                  key={point.id} 
-                  position={point.position}
-                  icon={markerIcon}
-                >
-                  <Popup>
-                    <div className="min-w-[200px]">
-                      <h3 className="font-bold">{point.name}</h3>
-                      <p className="text-sm text-gray-600">{point.city}, {point.country}</p>
-                      {point.image && (
-                        <img 
-                          src={point.image} 
-                          alt={point.name}
-                          className="w-full h-24 object-cover my-2 rounded"
-                        />
-                      )}
-                      {point.description && (
-                        <p className="text-xs my-1">{point.description.substring(0, 100)}...</p>
-                      )}
-                      {point.link && (
-                        <a 
-                          href={point.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs text-blue-500 hover:underline"
-                        >
-                          Learn more
-                        </a>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              ))}
+              
+              {/* Markers for each destination */}
+              {destinations.filter(d => d.countryName).map((destination, index) => {
+                const coords = getCountryCoordinates(destination.countryName);
+                return (
+                  <Marker 
+                    key={destination.id} 
+                    position={coords}
+                    icon={markerIcon}
+                  >
+                    <Popup>
+                      <div>
+                        <h3 className="font-medium">{destination.countryName}</h3>
+                        {destination.cityName && <p>{destination.cityName}</p>}
+                        {destination.durationDays && <p>{destination.durationDays} days</p>}
+                      </div>
+                    </Popup>
+                  </Marker>
+                );
+              })}
+              
+              {/* Polyline connecting destinations in order */}
+              {coordinates.length > 1 && (
+                <Polyline 
+                  positions={coordinates}
+                  color="blue"
+                  weight={3}
+                  opacity={0.7}
+                  dashArray="5, 10"
+                />
+              )}
+              
+              <MapController coordinates={coordinates} />
             </MapContainer>
-          </div>
-        ) : (
-          <div className="h-[200px] flex items-center justify-center border rounded-md">
-            <p className="text-muted-foreground">Add destinations to see them on the map</p>
-          </div>
-        )}
+          ) : (
+            <div className="h-full w-full flex items-center justify-center bg-muted/20">
+              <p className="text-muted-foreground">Add destinations to see your trip on the map</p>
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
