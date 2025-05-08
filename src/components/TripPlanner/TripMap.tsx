@@ -78,7 +78,7 @@ const TripMap: React.FC<TripMapProps> = ({ destinations, countries }) => {
               />
               
               {/* Markers for each destination */}
-              {destinations.filter(d => d.countryName).map((destination) => {
+              {destinations.filter(d => d.countryName).map((destination, index) => {
                 const coords = getCountryCoordinates(destination.countryName);
                 return (
                   <Marker 

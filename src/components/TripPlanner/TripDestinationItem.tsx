@@ -22,17 +22,6 @@ const TripDestinationItem: React.FC<TripDestinationItemProps> = ({
   onChange, 
   onRemove 
 }) => {
-  // Handle country selection change
-  const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedCountry = countries.find(c => c.name.common === e.target.value);
-    if (selectedCountry) {
-      onChange({ 
-        country: selectedCountry,
-        countryName: selectedCountry.name.common 
-      });
-    }
-  };
-
   return (
     <Card className="bg-card/50 backdrop-blur-sm">
       <CardContent className="pt-4 pb-4">
@@ -58,7 +47,7 @@ const TripDestinationItem: React.FC<TripDestinationItemProps> = ({
             <select
               id={`country-${destination.id}`}
               value={destination.countryName}
-              onChange={handleCountryChange}
+              onChange={(e) => onChange({ countryName: e.target.value })}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <option value="">Select a country</option>

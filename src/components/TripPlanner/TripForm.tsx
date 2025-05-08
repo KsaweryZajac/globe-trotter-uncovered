@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { format, addDays, differenceInDays } from 'date-fns';
@@ -16,29 +15,19 @@ import { PointOfInterest } from '@/services/tripPlannerApi';
 import DestinationSelector from './DestinationSelector';
 import TripCostEstimate from './TripCostEstimate';
 
-// Updated TripDestination interface with all required properties
 export interface TripDestination {
-  id: string;
   country: Country;
   city: string;
-  countryName: string;
-  cityName?: string;
-  durationDays?: number;
-  notes?: string;
   pointsOfInterest: PointOfInterest[];
   selectedPOIs: PointOfInterest[];
 }
 
-// Updated Trip interface with all required properties
 export interface Trip {
   id: string;
   title: string;
-  name: string;
   startDate: string;
   endDate: string;
   homeCountry?: string;
-  startCountry?: string;
-  totalCost?: number;
   destinations: TripDestination[];
 }
 
@@ -77,11 +66,8 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
     if (!defaultCountry) return; // Guard against empty countries array
 
     setDestinations([...destinations, {
-      id: Date.now().toString(),
       country: defaultCountry,
       city: '',
-      countryName: defaultCountry.name.common,
-      cityName: '',
       pointsOfInterest: [],
       selectedPOIs: []
     }]);
@@ -90,12 +76,6 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
   // Update a destination
   const updateDestination = (index: number, destination: Partial<TripDestination>) => {
     const newDestinations = [...destinations];
-    
-    // If updating the country, also update countryName
-    if (destination.country) {
-      destination.countryName = destination.country.name.common;
-    }
-    
     newDestinations[index] = { ...newDestinations[index], ...destination };
     setDestinations(newDestinations);
   };
@@ -113,25 +93,12 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
       return;
     }
 
-    // Calculate estimated total cost based on destinations
-    let totalCost = 0;
-    destinations.forEach(dest => {
-      if (dest.durationDays) {
-        // Simple mock calculation - would be replaced with actual cost calculation logic
-        const costPerDay = Math.random() * 100 + 50; // Between 50 and 150 per day
-        totalCost += dest.durationDays * costPerDay;
-      }
-    });
-
     const trip: Trip = {
       id: initialTrip?.id || Date.now().toString(),
       title: tripTitle,
-      name: tripTitle,  // Ensure both title and name are set to the same value
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       homeCountry: homeCountry,
-      startCountry: homeCountry,  // Use homeCountry as startCountry
-      totalCost: Math.round(totalCost),
       destinations
     };
 
