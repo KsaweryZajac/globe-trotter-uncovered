@@ -24,7 +24,7 @@ const TripExportButton: React.FC<TripExportButtonProps> = ({ trip }) => {
       // Add title
       doc.setFontSize(20);
       doc.setTextColor(0, 0, 0);
-      doc.text(trip.name, 20, 20);
+      doc.text(trip.name || trip.title, 20, 20);
       
       // Add horizontal line
       doc.setDrawColor(220, 220, 220);
@@ -33,7 +33,7 @@ const TripExportButton: React.FC<TripExportButtonProps> = ({ trip }) => {
       // Trip details
       doc.setFontSize(12);
       doc.text(`Travel Dates: ${format(startDate, "MMMM d, yyyy")} - ${format(endDate, "MMMM d, yyyy")}`, 20, 35);
-      doc.text(`Starting Country: ${trip.startCountry}`, 20, 42);
+      doc.text(`Starting Country: ${trip.startCountry || trip.homeCountry || "Not specified"}`, 20, 42);
       
       // Add destinations section
       doc.setFontSize(14);
@@ -94,7 +94,7 @@ const TripExportButton: React.FC<TripExportButtonProps> = ({ trip }) => {
       }
       
       // Save PDF
-      const fileName = `${trip.name.replace(/\s+/g, '_')}_travel_plan.pdf`;
+      const fileName = `${(trip.name || trip.title).replace(/\s+/g, '_')}_travel_plan.pdf`;
       doc.save(fileName);
       
       // Show success toast

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { format, addDays, differenceInDays } from 'date-fns';
@@ -14,21 +15,30 @@ import type { Country } from '@/services/api';
 import { PointOfInterest } from '@/services/tripPlannerApi';
 import DestinationSelector from './DestinationSelector';
 import TripCostEstimate from './TripCostEstimate';
+import TripCostSummary from './TripCostSummary';
 
 export interface TripDestination {
+  id: string;
   country: Country;
+  countryName: string;
   city: string;
+  cityName?: string;
   pointsOfInterest: PointOfInterest[];
   selectedPOIs: PointOfInterest[];
+  durationDays?: number;
+  notes?: string;
 }
 
 export interface Trip {
   id: string;
+  name: string;
   title: string;
   startDate: string;
   endDate: string;
   homeCountry?: string;
+  startCountry?: string;
   destinations: TripDestination[];
+  totalCost?: number;
 }
 
 interface TripFormProps {
@@ -40,8 +50,8 @@ interface TripFormProps {
 const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries }) => {
   const [savedCities] = useLocalStorage<Record<string, string[]>>('savedCities', {});
 
-  const [tripTitle, setTripTitle] = useState(initialTrip?.title || '');
-  const [homeCountry, setHomeCountry] = useState<string>(initialTrip?.homeCountry || '');
+  const [tripTitle, setTripTitle] = useState(initialTrip?.title || initialTrip?.name || '');
+  const [homeCountry, setHomeCountry] = useState<string>(initialTrip?.homeCountry || initialTrip?.startCountry || '');
   const [startDate, setStartDate] = useState<Date | undefined>(
     initialTrip?.startDate ? new Date(initialTrip.startDate) : undefined
   );
@@ -51,6 +61,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
   const [destinations, setDestinations] = useState<TripDestination[]>(
     initialTrip?.destinations || []
   );
+  const [totalCost, setTotalCost] = useState<number>(initialTrip?.totalCost || 0);
 
   // Sort countries alphabetically
   const sortedCountries = [...countries].sort((a, b) => 
@@ -65,17 +76,30 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
 
     if (!defaultCountry) return; // Guard against empty countries array
 
-    setDestinations([...destinations, {
+    const newDestination: TripDestination = {
+      id: Date.now().toString(),
       country: defaultCountry,
+      countryName: defaultCountry.name.common,
       city: '',
+      cityName: '',
       pointsOfInterest: [],
-      selectedPOIs: []
-    }]);
+      selectedPOIs: [],
+      durationDays: undefined,
+      notes: ''
+    };
+
+    setDestinations([...destinations, newDestination]);
   };
 
   // Update a destination
   const updateDestination = (index: number, destination: Partial<TripDestination>) => {
     const newDestinations = [...destinations];
+    
+    // If country is updated, also update countryName
+    if (destination.country) {
+      destination.countryName = destination.country.name.common;
+    }
+    
     newDestinations[index] = { ...newDestinations[index], ...destination };
     setDestinations(newDestinations);
   };
@@ -87,6 +111,29 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
     setDestinations(newDestinations);
   };
 
+  // Update total cost when destinations change
+  useEffect(() => {
+    if (destinations.length > 0 && startDate && endDate) {
+      // Calculate total cost based on destinations
+      const tripDuration = Math.max(1, differenceInDays(endDate, startDate) + 1);
+      
+      // Simple cost calculation logic - can be enhanced
+      let calculatedCost = 0;
+      
+      destinations.forEach(destination => {
+        const destDuration = destination.durationDays || Math.ceil(tripDuration / destinations.length);
+        // Base cost per destination
+        const baseCost = 100 * destDuration;
+        calculatedCost += baseCost;
+      });
+      
+      // Add fixed costs (flights, etc.)
+      calculatedCost += 500;
+      
+      setTotalCost(calculatedCost);
+    }
+  }, [destinations, startDate, endDate]);
+
   // Save the trip
   const handleSaveTrip = () => {
     if (!startDate || !endDate || destinations.length === 0 || !tripTitle) {
@@ -95,11 +142,14 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
 
     const trip: Trip = {
       id: initialTrip?.id || Date.now().toString(),
+      name: tripTitle,
       title: tripTitle,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       homeCountry: homeCountry,
-      destinations
+      startCountry: homeCountry,
+      destinations,
+      totalCost
     };
 
     // Ensure onSaveTrip is a function before calling it
@@ -113,11 +163,6 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
   // Get the trip duration in days
   const tripDuration = startDate && endDate ? 
     Math.max(1, differenceInDays(endDate, startDate) + 1) : 0;
-
-  // Handle home country change
-  const handleHomeCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setHomeCountry(e.target.value);
-  };
 
   return (
     <div className="space-y-6">
@@ -146,7 +191,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
             <select
               id="home-country"
               value={homeCountry}
-              onChange={handleHomeCountryChange}
+              onChange={(e) => setHomeCountry(e.target.value)}
               className="w-full px-3 py-2 mt-1 border rounded-md"
             >
               <option value="">-- Select your home country --</option>
@@ -161,6 +206,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
             </p>
           </div>
           
+          {/* Date selection */}
           <div className="flex flex-col space-y-4">
             <div>
               <Label>Start Date</Label>
@@ -218,6 +264,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
             </div>
           </div>
 
+          {/* Destinations section */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <Label>Destinations</Label>
@@ -247,7 +294,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
               <div className="space-y-4">
                 {destinations.map((destination, index) => (
                   <DestinationSelector
-                    key={index}
+                    key={destination.id || index}
                     countries={countries}
                     destination={destination}
                     savedCities={savedCities}
@@ -259,11 +306,13 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
             )}
           </div>
 
+          {/* Cost summary */}
           {destinations.length > 0 && tripDuration > 0 && (
-            <TripCostEstimate 
+            <TripCostSummary 
               destinations={destinations} 
-              tripDuration={tripDuration}
-              homeCountry={homeCountry}
+              startDate={startDate}
+              endDate={endDate}
+              totalCost={totalCost}
             />
           )}
 

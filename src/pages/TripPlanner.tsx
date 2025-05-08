@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/Header';
-import { PlusIcon, Map, Calendar, Save } from 'lucide-react';
+import { PlusIcon, Map, Calendar } from 'lucide-react';
 import TripForm, { Trip } from '@/components/TripPlanner/TripForm';
 import TripList from '@/components/TripPlanner/TripList';
 import TripMap from '@/components/TripPlanner/TripMap';
@@ -29,6 +29,8 @@ const TripPlanner = () => {
   // Handle saving a trip
   const handleSaveTrip = (tripData: Trip) => {
     try {
+      console.log("Saving trip:", tripData);
+      
       // Check if we're updating an existing trip or creating a new one
       const isUpdating = trips.some(t => t.id === tripData.id);
       
@@ -225,7 +227,7 @@ const TripPlanner = () => {
                     <Card>
                       <CardHeader>
                         <CardTitle className="flex items-center justify-between">
-                          <span>{selectedTrip.name}</span>
+                          <span>{selectedTrip.name || selectedTrip.title}</span>
                           <div className="flex space-x-2">
                             <TripExportButton trip={selectedTrip} />
                             <Button
@@ -252,7 +254,7 @@ const TripPlanner = () => {
                           </div>
                           <div>
                             <h3 className="text-sm font-medium text-muted-foreground">Starting From</h3>
-                            <p>{selectedTrip.startCountry}</p>
+                            <p>{selectedTrip.startCountry || selectedTrip.homeCountry || "Not specified"}</p>
                           </div>
                         </div>
                         
