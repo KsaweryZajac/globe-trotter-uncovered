@@ -10,12 +10,18 @@ interface CountryCardProps {
   country: Country;
   onAddToFavorites: (country: Country) => void;
   isFavorite: boolean;
+  loading?: boolean;
+  error?: string | null;
+  onExploreClick?: () => void;
 }
 
 const CountryCard: React.FC<CountryCardProps> = ({
   country,
   onAddToFavorites,
   isFavorite,
+  loading,
+  error,
+  onExploreClick,
 }) => {
   // Check if coat of arms exists
   const hasCoatOfArms = country.coatOfArms && 
@@ -30,6 +36,38 @@ const CountryCard: React.FC<CountryCardProps> = ({
   const formattedPopulation = country.population
     ? country.population.toLocaleString()
     : 'Unknown';
+
+  if (loading) {
+    return (
+      <Card className="overflow-hidden transition-all hover:shadow-md">
+        <div className="h-32 bg-muted animate-pulse"></div>
+        <CardHeader className="p-4 pb-2">
+          <div className="h-6 bg-muted animate-pulse rounded w-3/4"></div>
+          <div className="h-4 bg-muted animate-pulse rounded w-1/2 mt-2"></div>
+        </CardHeader>
+        <CardContent className="p-4 pt-2 grid gap-2">
+          <div className="space-y-2">
+            <div className="h-4 bg-muted animate-pulse rounded w-2/3"></div>
+            <div className="h-4 bg-muted animate-pulse rounded w-1/2"></div>
+            <div className="h-4 bg-muted animate-pulse rounded w-3/5"></div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="overflow-hidden transition-all hover:shadow-md">
+        <CardHeader className="p-4 pb-2">
+          <CardTitle className="text-lg">Error Loading Country</CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 pt-2">
+          <p className="text-destructive">{error}</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden transition-all hover:shadow-md">
@@ -77,12 +115,13 @@ const CountryCard: React.FC<CountryCardProps> = ({
           
           {hasCoatOfArms ? (
             <div className="flex-shrink-0 w-16 h-auto flex items-center justify-center">
-              <img 
-                src={country.coatOfArms.svg || country.coatOfArms.png} 
-                alt={`Coat of arms of ${country.name.common}`}
-                className="max-w-full max-h-16 object-contain"
-                style={{ height: 'auto', width: 'auto' }}
-              />
+              <AspectRatio ratio={1} className="w-16">
+                <img 
+                  src={country.coatOfArms.svg || country.coatOfArms.png} 
+                  alt={`Coat of arms of ${country.name.common}`}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </AspectRatio>
             </div>
           ) : (
             <div className="flex-shrink-0 w-16 h-auto flex items-center justify-center">
@@ -100,9 +139,14 @@ const CountryCard: React.FC<CountryCardProps> = ({
             variant="outline" 
             size="sm" 
             className="w-full"
-            asChild
+            onClick={onExploreClick}
+            asChild={!onExploreClick}
           >
-            <a href={`/country/${country.cca3}`}>View Details</a>
+            {onExploreClick ? (
+              <span>View Details</span>
+            ) : (
+              <a href={`/country/${country.cca3}`}>View Details</a>
+            )}
           </Button>
         </div>
       </CardContent>
