@@ -1,11 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import { Expand } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ImageGalleryProps {
   country: string;
@@ -35,7 +34,6 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [expandedGallery, setExpandedGallery] = useState<PexelsPhoto[]>([]);
   const [expandedLoading, setExpandedLoading] = useState(false);
-  const [galleryView, setGalleryView] = useState<'grid' | 'carousel'>('grid');
   const [expandedLoadedImages, setExpandedLoadedImages] = useState<Record<number, boolean>>({});
   
   // Fetch initial images for preview
@@ -193,88 +191,42 @@ const ImageGallery: React.FC<ImageGalleryProps> = ({
       <Dialog open={fullscreenOpen} onOpenChange={setFullscreenOpen}>
         <DialogContent className="max-w-screen-lg w-[90vw]">
           <DialogHeader>
-            <DialogTitle className="text-center mb-2">
+            <DialogTitle className="text-center mb-4">
               {country} Photo Gallery
             </DialogTitle>
-            <Tabs value={galleryView} onValueChange={(val) => setGalleryView(val as 'grid' | 'carousel')}>
-              <div className="flex justify-center">
-                <TabsList className="mb-4">
-                  <TabsTrigger value="grid">Grid View</TabsTrigger>
-                  <TabsTrigger value="carousel">Slideshow</TabsTrigger>
-                </TabsList>
-              </div>
-
-              <div className="relative">
-                {expandedLoading ? (
-                  <div className="flex justify-center p-12">
-                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
-                  </div>
-                ) : (
-                  <>
-                    <TabsContent value="grid">
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {expandedGallery.map((photo, index) => (
-                          <div key={photo.id} className="relative aspect-[4/3] group">
-                            {!expandedLoadedImages[index] && (
-                              <Skeleton className="absolute inset-0 w-full h-full" />
-                            )}
-                            <img 
-                              src={photo.src.medium}
-                              alt={photo.alt || `Photo of ${country}`}
-                              className={`w-full h-full object-cover rounded-md transition-opacity duration-300 ${expandedLoadedImages[index] ? 'opacity-100' : 'opacity-0'} hover:scale-[1.02] transition-transform`}
-                              onLoad={() => handleExpandedImageLoaded(index)}
-                              loading="lazy"
-                            />
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <p className="text-xs text-white truncate">by {photo.photographer}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </TabsContent>
-                    
-                    <TabsContent value="carousel">
-                      <Carousel className="w-full">
-                        <CarouselContent>
-                          {expandedGallery.map((photo) => (
-                            <CarouselItem key={photo.id}>
-                              <div className="flex flex-col items-center justify-center p-1">
-                                <div className="relative aspect-[16/9] w-full overflow-hidden rounded-md">
-                                  <img 
-                                    src={photo.src.large} 
-                                    alt={photo.alt || `Photo of ${country}`}
-                                    className="object-cover w-full h-full"
-                                    loading="lazy"
-                                  />
-                                </div>
-                                <div className="flex justify-between w-full mt-2 text-sm">
-                                  <p className="text-muted-foreground">Photo by {photo.photographer}</p>
-                                  <a 
-                                    href={photo.url} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-primary hover:underline"
-                                  >
-                                    View on Pexels
-                                  </a>
-                                </div>
-                              </div>
-                            </CarouselItem>
-                          ))}
-                        </CarouselContent>
-                        <CarouselPrevious className="left-2 md:-left-12" />
-                        <CarouselNext className="right-2 md:-right-12" />
-                      </Carousel>
-                    </TabsContent>
-                  </>
-                )}
-                
-                <div className="flex justify-center mt-4">
-                  <p className="text-xs text-muted-foreground">Images from Pexels</p>
-                </div>
-              </div>
-            </Tabs>
           </DialogHeader>
+          
+          <div className="relative">
+            {expandedLoading ? (
+              <div className="flex justify-center p-12">
+                <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {expandedGallery.map((photo, index) => (
+                  <div key={photo.id} className="relative aspect-[4/3] group">
+                    {!expandedLoadedImages[index] && (
+                      <Skeleton className="absolute inset-0 w-full h-full" />
+                    )}
+                    <img 
+                      src={photo.src.medium}
+                      alt={photo.alt || `Photo of ${country}`}
+                      className={`w-full h-full object-cover rounded-md transition-opacity duration-300 ${expandedLoadedImages[index] ? 'opacity-100' : 'opacity-0'} hover:scale-[1.02] transition-transform`}
+                      onLoad={() => handleExpandedImageLoaded(index)}
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/50 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-xs text-white truncate">by {photo.photographer}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex justify-center mt-4">
+              <p className="text-xs text-muted-foreground">Images from Pexels</p>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

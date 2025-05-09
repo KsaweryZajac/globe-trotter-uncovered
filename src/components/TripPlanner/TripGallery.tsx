@@ -27,7 +27,11 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
   };
 
   // Generate gallery items from destinations
-  const galleryItems: GalleryItem[] = destinations.flatMap(dest => {
+  const galleryItems: GalleryItem[] = Array.isArray(destinations) ? destinations.flatMap(dest => {
+    if (!dest || !dest.city || !dest.country || !dest.country.name) {
+      return [];
+    }
+    
     // Create gallery item for each city
     const cityItem: GalleryItem = {
       id: `city-${dest.city}`,
@@ -47,7 +51,7 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
     }));
     
     return [cityItem, ...poiItems];
-  });
+  }) : [];
 
   return (
     <Card>
@@ -67,6 +71,12 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
                 className={`w-full h-full object-cover transition-opacity duration-300 ${loadedImages[item.id] ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => handleImageLoaded(item.id)}
                 loading="lazy"
+                onError={(e) => {
+                  // Fallback for error handling
+                  const target = e.target as HTMLImageElement;
+                  target.src = `https://via.placeholder.com/400x300?text=${encodeURIComponent(item.title)}`;
+                  handleImageLoaded(item.id);
+                }}
               />
               <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2">
                 <h4 className="text-sm font-medium">{item.title}</h4>

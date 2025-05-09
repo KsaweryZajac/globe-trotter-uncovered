@@ -15,7 +15,19 @@ interface SavedTripsProps {
 const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTrip }) => {
   // Handle viewing a trip
   const handleViewTrip = (trip: Trip) => {
-    onSelectTrip(trip);
+    if (typeof onSelectTrip === 'function') {
+      onSelectTrip(trip);
+    } else {
+      console.error("onSelectTrip is not a function");
+    }
+  };
+
+  const handleDeleteTrip = (tripId: string) => {
+    if (typeof onDeleteTrip === 'function') {
+      onDeleteTrip(tripId);
+    } else {
+      console.error("onDeleteTrip is not a function");
+    }
   };
 
   return (
@@ -89,7 +101,7 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                           variant="ghost" 
                           size="sm"
                           className="h-7 w-7 p-0"
-                          onClick={() => onSelectTrip(trip)}
+                          onClick={() => handleViewTrip(trip)}
                         >
                           <EditIcon className="h-3.5 w-3.5" />
                         </Button>
@@ -97,7 +109,7 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                           variant="ghost" 
                           size="sm"
                           className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => onDeleteTrip(trip.id)}
+                          onClick={() => handleDeleteTrip(trip.id)}
                         >
                           <TrashIcon className="h-3.5 w-3.5" />
                         </Button>
