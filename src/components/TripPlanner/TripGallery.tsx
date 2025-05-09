@@ -46,7 +46,6 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
       title: poi.name,
       subtitle: `${dest.city}, ${dest.country.name.common}`,
       searchTerm: poi.name,
-      // Use the POI's image if available (from Wikipedia)
       image: poi.image
     }));
     
@@ -72,7 +71,6 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
                 onLoad={() => handleImageLoaded(item.id)}
                 loading="lazy"
                 onError={(e) => {
-                  // Fallback for error handling
                   const target = e.target as HTMLImageElement;
                   target.src = `https://via.placeholder.com/400x300?text=${encodeURIComponent(item.title)}`;
                   handleImageLoaded(item.id);
