@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { differenceInDays, format } from 'date-fns';
+import { differenceInDays } from 'date-fns';
 import { TripDestination } from './TripForm';
 
 interface TripCostSummaryProps {

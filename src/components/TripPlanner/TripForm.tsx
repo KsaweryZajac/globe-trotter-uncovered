@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Save } from 'lucide-react';
 import type { Country } from '@/services/api';
 import { PointOfInterest } from '@/services/tripPlannerApi';
-import DestinationSelector from './DestinationSelector';
 import TripCostSummary from './TripCostSummary';
 import TripTitleInput from './FormComponents/TripTitleInput';
 import HomeCountrySelector from './FormComponents/HomeCountrySelector';
@@ -149,7 +148,7 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
       totalCost
     };
 
-    // Ensure onSaveTrip is a function before calling it
+    // Make sure onSaveTrip is a function before calling it
     if (typeof onSaveTrip === 'function') {
       onSaveTrip(trip);
     } else {

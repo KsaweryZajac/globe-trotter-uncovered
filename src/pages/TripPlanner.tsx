@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -55,7 +55,7 @@ const TripPlanner = () => {
     } catch (error) {
       console.error("Error saving trip:", error);
       toast.error("Failed to save trip", {
-        description: "There was an error saving your trip. Please try again.",
+        description: "There was an error saving your trip. Please try again."
       });
     }
   };

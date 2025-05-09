@@ -55,8 +55,8 @@ const DestinationsList: React.FC<DestinationsListProps> = ({
           {destinations.map((destination, index) => (
             <DestinationSelector
               key={destination.id || index}
-              countries={countries}
               destination={destination}
+              countries={countries}
               savedCities={savedCities}
               onChange={(updatedDestination) => updateDestination(index, updatedDestination)}
               onRemove={() => removeDestination(index)}
