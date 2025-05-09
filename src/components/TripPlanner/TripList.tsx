@@ -13,6 +13,11 @@ interface TripListProps {
 }
 
 const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }) => {
+  if (!Array.isArray(trips)) {
+    console.error("Trips is not an array:", trips);
+    return null;
+  }
+  
   if (trips.length === 0) {
     return (
       <div className="text-center p-8 border border-dashed rounded-lg">
@@ -24,14 +29,49 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
     );
   }
 
+  const handleSelectTrip = (trip: Trip) => {
+    if (typeof onSelectTrip === 'function') {
+      onSelectTrip(trip);
+    } else {
+      console.error("onSelectTrip is not a function");
+    }
+  };
+
+  const handleDeleteTrip = (e: React.MouseEvent, tripId: string) => {
+    e.stopPropagation();
+    
+    if (typeof onDeleteTrip === 'function') {
+      onDeleteTrip(tripId);
+    } else {
+      console.error("onDeleteTrip is not a function");
+    }
+  };
+
   return (
     <div className="space-y-4">
       {trips.map((trip) => {
-        const startDate = new Date(trip.startDate);
-        const endDate = new Date(trip.endDate);
+        if (!trip || !trip.id) {
+          console.warn("Invalid trip object:", trip);
+          return null;
+        }
+        
+        let startDate;
+        let endDate;
+        
+        try {
+          startDate = new Date(trip.startDate);
+          endDate = new Date(trip.endDate);
+        } catch (error) {
+          console.error("Error parsing dates for trip", trip.id, error);
+          return null;
+        }
         
         return (
-          <Card key={trip.id} className="hover:bg-accent/5 transition-colors">
+          <Card 
+            key={trip.id} 
+            className="hover:bg-accent/5 transition-colors cursor-pointer"
+            onClick={() => handleSelectTrip(trip)}
+          >
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
                 <CardTitle className="text-lg font-medium">{trip.name || trip.title}</CardTitle>
@@ -40,7 +80,10 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
                     variant="ghost" 
                     size="sm" 
                     className="h-8 w-8 p-0"
-                    onClick={() => onSelectTrip(trip)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSelectTrip(trip);
+                    }}
                   >
                     <Edit className="h-4 w-4" />
                     <span className="sr-only">Edit</span>
@@ -49,7 +92,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
                     variant="ghost" 
                     size="sm"
                     className="h-8 w-8 p-0"
-                    onClick={() => onDeleteTrip(trip.id)}
+                    onClick={(e) => handleDeleteTrip(e, trip.id)}
                   >
                     <Trash2 className="h-4 w-4" />
                     <span className="sr-only">Delete</span>
@@ -69,7 +112,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
                 </div>
                 <div>
                   <span className="text-muted-foreground">Destinations: </span>
-                  <span>{trip.destinations.length}</span>
+                  <span>{Array.isArray(trip.destinations) ? trip.destinations.length : 0}</span>
                 </div>
                 {trip.totalCost && (
                   <div>
@@ -83,7 +126,10 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
                 variant="outline" 
                 size="sm" 
                 className="w-full mt-2"
-                onClick={() => onSelectTrip(trip)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleSelectTrip(trip);
+                }}
               >
                 View Details
               </Button>

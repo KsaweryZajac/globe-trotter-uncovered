@@ -27,30 +27,36 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
   };
 
   // Generate gallery items from destinations
-  const galleryItems: GalleryItem[] = Array.isArray(destinations) ? destinations.flatMap(dest => {
-    if (!dest || !dest.city || !dest.country || !dest.country.name) {
-      return [];
-    }
+  const galleryItems: GalleryItem[] = React.useMemo(() => {
+    if (!Array.isArray(destinations)) return [];
     
-    // Create gallery item for each city
-    const cityItem: GalleryItem = {
-      id: `city-${dest.city}`,
-      title: dest.city,
-      subtitle: dest.country.name.common,
-      searchTerm: `${dest.city} ${dest.country.name.common} skyline`
-    };
-    
-    // Create gallery items for selected POIs
-    const poiItems: GalleryItem[] = (dest.selectedPOIs || []).map(poi => ({
-      id: poi.id,
-      title: poi.name,
-      subtitle: `${dest.city}, ${dest.country.name.common}`,
-      searchTerm: poi.name,
-      image: poi.image
-    }));
-    
-    return [cityItem, ...poiItems];
-  }) : [];
+    return destinations.flatMap(dest => {
+      if (!dest || !dest.city || !dest.country || !dest.country.name) {
+        return [];
+      }
+      
+      // Create gallery item for each city
+      const cityItem: GalleryItem = {
+        id: `city-${dest.city}`,
+        title: dest.city,
+        subtitle: dest.country.name.common,
+        searchTerm: `${dest.city} ${dest.country.name.common} skyline`
+      };
+      
+      // Create gallery items for selected POIs
+      const poiItems: GalleryItem[] = Array.isArray(dest.selectedPOIs) 
+        ? dest.selectedPOIs.map(poi => ({
+            id: poi.id,
+            title: poi.name,
+            subtitle: `${dest.city}, ${dest.country.name.common}`,
+            searchTerm: poi.name,
+            image: poi.image
+          }))
+        : [];
+      
+      return [cityItem, ...poiItems];
+    });
+  }, [destinations]);
 
   return (
     <Card>

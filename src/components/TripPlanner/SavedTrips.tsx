@@ -13,6 +13,11 @@ interface SavedTripsProps {
 }
 
 const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTrip }) => {
+  if (!Array.isArray(trips)) {
+    console.error("Trips is not an array:", trips);
+    return null;
+  }
+  
   // Handle viewing a trip
   const handleViewTrip = (trip: Trip) => {
     if (typeof onSelectTrip === 'function') {
@@ -22,7 +27,10 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
     }
   };
 
-  const handleDeleteTrip = (tripId: string) => {
+  const handleDeleteTrip = (event: React.MouseEvent, tripId: string) => {
+    // Prevent event bubbling to parent elements
+    event.stopPropagation();
+    
     if (typeof onDeleteTrip === 'function') {
       onDeleteTrip(tripId);
     } else {
@@ -58,13 +66,24 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {trips.map((trip) => {
-              const startDate = parseISO(trip.startDate);
-              const endDate = parseISO(trip.endDate);
+              if (!trip || !trip.id) return null;
+              
+              let startDate;
+              let endDate;
+              
+              try {
+                startDate = parseISO(trip.startDate);
+                endDate = parseISO(trip.endDate);
+              } catch (error) {
+                console.error("Error parsing dates:", error);
+                return null;
+              }
               
               return (
                 <div 
                   key={trip.id} 
-                  className="border rounded-md overflow-hidden hover:shadow-md transition-shadow"
+                  className="border rounded-md overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => handleViewTrip(trip)}
                 >
                   <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-4">
                     <h3 className="font-medium text-lg truncate">{trip.title}</h3>
@@ -76,14 +95,19 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                   
                   <div className="p-4">
                     <div className="space-y-1 mb-4">
-                      {trip.destinations.length > 0 ? trip.destinations.map((dest, index) => (
-                        <div key={index} className="flex items-center text-sm">
-                          <MapPinIcon className="h-3 w-3 mr-1 text-muted-foreground flex-shrink-0" />
-                          <span className="truncate">{dest.city}, {dest.country.name.common}</span>
-                        </div>
-                      )) : (
-                        <div className="text-sm text-muted-foreground">No destinations added</div>
-                      )}
+                      {Array.isArray(trip.destinations) && trip.destinations.length > 0 
+                        ? trip.destinations.map((dest, index) => (
+                            <div key={index} className="flex items-center text-sm">
+                              <MapPinIcon className="h-3 w-3 mr-1 text-muted-foreground flex-shrink-0" />
+                              <span className="truncate">
+                                {dest.city || dest.cityName}, {dest.country?.name?.common || dest.countryName}
+                              </span>
+                            </div>
+                          ))
+                        : (
+                          <div className="text-sm text-muted-foreground">No destinations added</div>
+                        )
+                      }
                     </div>
                     
                     <div className="flex justify-between items-center pt-2 border-t">
@@ -91,7 +115,10 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                         variant="ghost" 
                         size="sm" 
                         className="text-xs"
-                        onClick={() => handleViewTrip(trip)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewTrip(trip);
+                        }}
                       >
                         <EyeIcon className="h-3.5 w-3.5 mr-1" />
                         View
@@ -101,7 +128,10 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                           variant="ghost" 
                           size="sm"
                           className="h-7 w-7 p-0"
-                          onClick={() => handleViewTrip(trip)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewTrip(trip);
+                          }}
                         >
                           <EditIcon className="h-3.5 w-3.5" />
                         </Button>
@@ -109,7 +139,7 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                           variant="ghost" 
                           size="sm"
                           className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteTrip(trip.id)}
+                          onClick={(e) => handleDeleteTrip(e, trip.id)}
                         >
                           <TrashIcon className="h-3.5 w-3.5" />
                         </Button>
