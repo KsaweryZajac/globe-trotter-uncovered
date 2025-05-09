@@ -49,7 +49,7 @@ interface WeatherResponse {
 interface WeatherDisplayProps {
   countryName: string;
   cityName?: string;
-  capital?: string;  // Add capital as an alternative to cityName
+  capital?: string;
 }
 
 const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, capital }) => {
@@ -59,7 +59,6 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
   const [unit, setUnit] = useState<'c' | 'f'>('c');
   
   useEffect(() => {
-    // Skip if no country name
     if (!countryName) {
       setLoading(false);
       return;
@@ -70,14 +69,11 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
         setLoading(true);
         setError(null);
         
-        // Use cityName, capital, or fall back to countryName
         const location = cityName || capital || countryName;
         
-        // Use the public WeatherAPI endpoint which allows CORS and doesn't need authentication for basic data
         const response = await fetch(`https://api.weatherapi.com/v1/forecast.json?key=d76c9971c6cd40dbaa692245232007&q=${encodeURIComponent(location)}&days=3&aqi=no&alerts=no`);
         
         if (!response.ok) {
-          // If the official API fails, try our fallback free API
           throw new Error('Weather API failed, trying fallback');
         }
         
@@ -87,7 +83,7 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
         console.error('Weather API error:', err);
         
         try {
-          // Fallback to Open-Meteo API which is completely free and no API key needed
+          // Fallback zur Open-Meteo API, die vollständig kostenlos ist und keinen API-Schlüssel benötigt
           const location = cityName || capital || countryName;
           const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`);
           
@@ -113,7 +109,7 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
           
           const weatherData = await weatherResponse.json();
           
-          // Convert Open-Meteo data format to our expected format
+          // Umwandlung des Open-Meteo-Datenformats in unser erwartetes Format
           const convertedData: WeatherResponse = {
             location: {
               name,
@@ -127,12 +123,12 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
                 text: getWeatherConditionText(weatherData.current.weather_code),
                 icon: getWeatherIconUrl(weatherData.current.weather_code),
               },
-              wind_kph: weatherData.current.wind_speed_10m * 3.6, // Convert m/s to km/h
+              wind_kph: weatherData.current.wind_speed_10m * 3.6,
               humidity: weatherData.current.relative_humidity_2m,
-              feelslike_c: weatherData.current.temperature_2m, // Estimate
+              feelslike_c: weatherData.current.temperature_2m,
               feelslike_f: weatherData.current.temperature_2m * 9/5 + 32,
-              uv: 0, // Not available in this API
-              wind_dir: 'N/A', // Not available in this API
+              uv: 0,
+              wind_dir: 'N/A',
             },
             forecast: {
               forecastday: weatherData.daily.time.map((date: string, i: number) => ({
@@ -167,7 +163,7 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
     fetchWeather();
   }, [countryName, cityName, capital]);
   
-  // Helper function to convert WMO weather codes to text
+  // Hilfsfunktion zur Umwandlung von WMO-Wettercodes in Text
   function getWeatherConditionText(code: number): string {
     const conditions: Record<number, string> = {
       0: 'Clear sky',
@@ -202,20 +198,19 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
     return conditions[code] || 'Unknown';
   }
   
-  // Helper function to get weather icon URL
+  // Hilfsfunktion zum Abrufen der Wetter-Icon-URL
   function getWeatherIconUrl(code: number): string {
-    // Map WMO codes to appropriate icons
-    if (code === 0) return 'https://cdn.weatherapi.com/weather/64x64/day/113.png'; // Clear
-    if (code >= 1 && code <= 2) return 'https://cdn.weatherapi.com/weather/64x64/day/116.png'; // Partly cloudy
-    if (code === 3) return 'https://cdn.weatherapi.com/weather/64x64/day/119.png'; // Cloudy
-    if (code >= 45 && code <= 48) return 'https://cdn.weatherapi.com/weather/64x64/day/248.png'; // Fog
-    if (code >= 51 && code <= 57) return 'https://cdn.weatherapi.com/weather/64x64/day/266.png'; // Drizzle
-    if (code >= 61 && code <= 67) return 'https://cdn.weatherapi.com/weather/64x64/day/308.png'; // Rain
-    if (code >= 71 && code <= 77) return 'https://cdn.weatherapi.com/weather/64x64/day/338.png'; // Snow
-    if (code >= 80 && code <= 82) return 'https://cdn.weatherapi.com/weather/64x64/day/305.png'; // Rain showers
-    if (code >= 85 && code <= 86) return 'https://cdn.weatherapi.com/weather/64x64/day/338.png'; // Snow showers
-    if (code >= 95) return 'https://cdn.weatherapi.com/weather/64x64/day/389.png'; // Thunderstorm
-    return 'https://cdn.weatherapi.com/weather/64x64/day/116.png'; // Default
+    if (code === 0) return 'https://cdn.weatherapi.com/weather/64x64/day/113.png';
+    if (code >= 1 && code <= 2) return 'https://cdn.weatherapi.com/weather/64x64/day/116.png';
+    if (code === 3) return 'https://cdn.weatherapi.com/weather/64x64/day/119.png';
+    if (code >= 45 && code <= 48) return 'https://cdn.weatherapi.com/weather/64x64/day/248.png';
+    if (code >= 51 && code <= 57) return 'https://cdn.weatherapi.com/weather/64x64/day/266.png';
+    if (code >= 61 && code <= 67) return 'https://cdn.weatherapi.com/weather/64x64/day/308.png';
+    if (code >= 71 && code <= 77) return 'https://cdn.weatherapi.com/weather/64x64/day/338.png';
+    if (code >= 80 && code <= 82) return 'https://cdn.weatherapi.com/weather/64x64/day/305.png';
+    if (code >= 85 && code <= 86) return 'https://cdn.weatherapi.com/weather/64x64/day/338.png';
+    if (code >= 95) return 'https://cdn.weatherapi.com/weather/64x64/day/389.png';
+    return 'https://cdn.weatherapi.com/weather/64x64/day/116.png';
   }
   
   if (loading) {
@@ -298,7 +293,6 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
               alt={weather.current.condition.text}
               className="w-16 h-16"
               onError={(e) => {
-                // Fallback icon if the weather icon fails to load
                 const target = e.target as HTMLImageElement;
                 target.src = 'https://cdn.weatherapi.com/weather/64x64/day/116.png';
               }}
@@ -343,7 +337,6 @@ const WeatherDisplay: React.FC<WeatherDisplayProps> = ({ countryName, cityName, 
                   alt={day.day.condition.text}
                   className="w-10 h-10 my-1"
                   onError={(e) => {
-                    // Fallback icon
                     const target = e.target as HTMLImageElement;
                     target.src = 'https://cdn.weatherapi.com/weather/64x64/day/116.png';
                   }}

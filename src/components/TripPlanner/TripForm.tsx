@@ -59,18 +59,17 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
   );
   const [totalCost, setTotalCost] = useState<number>(initialTrip?.totalCost || 0);
 
-  // Sort countries alphabetically
+  // Länder alphabetisch sortieren
   const sortedCountries = [...countries].sort((a, b) => 
     a.name.common.localeCompare(b.name.common)
   );
 
-  // Add a new destination
+  // Neues Reiseziel hinzufügen
   const addDestination = () => {
-    // Use the most recent country if a destination exists, otherwise use first country
     const lastDestination = destinations.length > 0 ? destinations[destinations.length - 1] : null;
     const defaultCountry = lastDestination ? lastDestination.country : sortedCountries[0];
 
-    if (!defaultCountry) return; // Guard against empty countries array
+    if (!defaultCountry) return;
 
     const newDestination: TripDestination = {
       id: Date.now().toString(),
@@ -87,11 +86,10 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
     setDestinations([...destinations, newDestination]);
   };
 
-  // Update a destination
+  // Reiseziel aktualisieren
   const updateDestination = (index: number, destination: Partial<TripDestination>) => {
     const newDestinations = [...destinations];
     
-    // If country is updated, also update countryName
     if (destination.country) {
       destination.countryName = destination.country.name.common;
     }
@@ -100,37 +98,33 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
     setDestinations(newDestinations);
   };
 
-  // Remove a destination
+  // Reiseziel entfernen
   const removeDestination = (index: number) => {
     const newDestinations = [...destinations];
     newDestinations.splice(index, 1);
     setDestinations(newDestinations);
   };
 
-  // Update total cost when destinations change
+  // Gesamtkosten aktualisieren, wenn sich Reiseziele ändern
   useEffect(() => {
     if (destinations.length > 0 && startDate && endDate) {
-      // Calculate total cost based on destinations
       const tripDuration = Math.max(1, differenceInDays(endDate, startDate) + 1);
       
-      // Simple cost calculation logic - can be enhanced
       let calculatedCost = 0;
       
       destinations.forEach(destination => {
         const destDuration = destination.durationDays || Math.ceil(tripDuration / destinations.length);
-        // Base cost per destination
         const baseCost = 100 * destDuration;
         calculatedCost += baseCost;
       });
       
-      // Add fixed costs (flights, etc.)
       calculatedCost += 500;
       
       setTotalCost(calculatedCost);
     }
   }, [destinations, startDate, endDate]);
 
-  // Save the trip
+  // Reise speichern
   const handleSaveTrip = () => {
     if (!startDate || !endDate || destinations.length === 0 || !tripTitle) {
       return;
@@ -148,7 +142,6 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
       totalCost
     };
 
-    // Make sure onSaveTrip is a function before calling it
     if (typeof onSaveTrip === 'function') {
       onSaveTrip(trip);
     } else {
@@ -156,7 +149,6 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
     }
   };
 
-  // Get the trip duration in days
   const tripDuration = startDate && endDate ? 
     Math.max(1, differenceInDays(endDate, startDate) + 1) : 0;
 
@@ -195,7 +187,6 @@ const TripForm: React.FC<TripFormProps> = ({ onSaveTrip, initialTrip, countries 
             removeDestination={removeDestination}
           />
 
-          {/* Cost summary */}
           {destinations.length > 0 && tripDuration > 0 && (
             <TripCostSummary 
               destinations={destinations} 

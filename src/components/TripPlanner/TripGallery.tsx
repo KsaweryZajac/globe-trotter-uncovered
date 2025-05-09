@@ -26,21 +26,18 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
     }));
   };
 
-  // Generate gallery items from destinations - making sure our data is valid
+  // Generiere Galerie-Elemente aus den Reisezielen - Sicherstellen, dass die Daten gültig sind
   const galleryItems: GalleryItem[] = React.useMemo(() => {
-    // Verify destinations is an array and not empty
     if (!destinations || !Array.isArray(destinations) || destinations.length === 0) {
       return [];
     }
     
-    // Safely map destinations to gallery items
     return destinations.flatMap(dest => {
       if (!dest || typeof dest !== 'object') {
         console.warn('Invalid destination object in TripGallery', dest);
         return [];
       }
       
-      // Create gallery item for each city
       const cityItems: GalleryItem[] = [];
       
       if (dest.city && dest.country && dest.country.name) {
@@ -52,7 +49,6 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
         });
       }
       
-      // Create gallery items for selected POIs if they exist
       const poiItems: GalleryItem[] = [];
       
       if (Array.isArray(dest.selectedPOIs)) {

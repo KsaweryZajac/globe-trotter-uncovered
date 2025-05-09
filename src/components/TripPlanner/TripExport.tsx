@@ -14,20 +14,16 @@ const TripExport: React.FC<TripExportProps> = ({ trip }) => {
   const handleExportPDF = () => {
     const doc = new jsPDF();
     
-    // Set up PDF
     const startDate = parseISO(trip.startDate);
     const endDate = parseISO(trip.endDate);
     const tripDuration = differenceInDays(endDate, startDate) + 1;
     
-    // Add title
     doc.setFontSize(20);
     doc.text(trip.title, 20, 20);
     
-    // Add dates
     doc.setFontSize(12);
     doc.text(`${format(startDate, 'MMMM d, yyyy')} - ${format(endDate, 'MMMM d, yyyy')} (${tripDuration} days)`, 20, 30);
     
-    // Add destinations
     doc.setFontSize(16);
     doc.text('Destinations', 20, 45);
     
@@ -51,7 +47,6 @@ const TripExport: React.FC<TripExportProps> = ({ trip }) => {
             doc.setFontSize(12);
           }
           
-          // Make sure we don't overflow page
           if (yPos > 270) {
             doc.addPage();
             yPos = 20;
@@ -59,17 +54,14 @@ const TripExport: React.FC<TripExportProps> = ({ trip }) => {
         });
       }
       
-      // Add some space between destinations
       yPos += 5;
       
-      // Make sure we don't overflow page
       if (yPos > 270) {
         doc.addPage();
         yPos = 20;
       }
     });
     
-    // Save the PDF
     doc.save(`${trip.title.replace(/\s+/g, '_')}_itinerary.pdf`);
   };
 

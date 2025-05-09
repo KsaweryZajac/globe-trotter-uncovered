@@ -20,37 +20,31 @@ const TripPlanner = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [trips, setTrips] = useLocalStorage<Trip[]>('savedTrips', []);
 
-  // Fetch countries using React Query
+  // Länder mit React Query abrufen
   const { data: countries = [], isLoading: isLoadingCountries } = useQuery({
     queryKey: ['countries'],
     queryFn: () => api.getAllCountries()
   });
 
-  // Handle saving a trip
+  // Speichern einer Reise
   const handleSaveTrip = (tripData: Trip) => {
     try {
       console.log("Saving trip:", tripData);
       
-      // Check if we're updating an existing trip or creating a new one
       const isUpdating = trips.some(t => t.id === tripData.id);
       
       if (isUpdating) {
-        // Update existing trip
         const updatedTrips = trips.map(trip => 
           trip.id === tripData.id ? tripData : trip
         );
         setTrips(updatedTrips);
         toast.success("Trip updated successfully");
       } else {
-        // Add new trip
         setTrips([...trips, tripData]);
         toast.success("New trip created successfully");
       }
       
-      // Switch to the list tab after saving
       setActiveTab("list");
-      
-      // Clear the selected trip
       setSelectedTrip(null);
     } catch (error) {
       console.error("Error saving trip:", error);
@@ -60,20 +54,19 @@ const TripPlanner = () => {
     }
   };
 
-  // Handle selecting a trip to edit
+  // Auswahl einer Reise zum Bearbeiten
   const handleSelectTrip = (trip: Trip) => {
     setSelectedTrip(trip);
     setActiveTab("create");
   };
 
-  // Handle deleting a trip
+  // Löschen einer Reise
   const handleDeleteTrip = (tripId: string) => {
     if (window.confirm("Are you sure you want to delete this trip?")) {
       try {
         const filteredTrips = trips.filter(trip => trip.id !== tripId);
         setTrips(filteredTrips);
         
-        // If the deleted trip was selected, clear the selection
         if (selectedTrip && selectedTrip.id === tripId) {
           setSelectedTrip(null);
         }
@@ -86,13 +79,12 @@ const TripPlanner = () => {
     }
   };
 
-  // Function to start a new trip
+  // Funktion zum Starten einer neuen Reise
   const startNewTrip = () => {
     setSelectedTrip(null);
     setActiveTab("create");
   };
 
-  // Display loading state while countries are being fetched
   if (isLoadingCountries) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-background/90">

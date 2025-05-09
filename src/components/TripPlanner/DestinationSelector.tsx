@@ -19,7 +19,6 @@ const DestinationSelector: React.FC<DestinationSelectorProps> = ({
   onChange,
   onRemove
 }) => {
-  // Make sure we're passing the correct props
   return (
     <TripDestinationItem
       destination={destination}

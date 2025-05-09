@@ -12,7 +12,7 @@ interface TripMapProps {
   countries: Country[];
 }
 
-// Fix for Leaflet marker icons
+// Korrektur für Leaflet-Markersymbole
 const markerIcon = L.icon({
   iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
@@ -22,17 +22,15 @@ const markerIcon = L.icon({
   shadowSize: [41, 41]
 });
 
-// Helper component to fit map to markers
+// Hilfskomponente, um die Karte an die Marker anzupassen
 const MapController = ({ coordinates }: { coordinates: [number, number][] }) => {
   const map = useMap();
   
   useEffect(() => {
     if (coordinates.length > 0) {
       if (coordinates.length === 1) {
-        // If only one point, center on it with a good zoom level
         map.setView(coordinates[0], 6);
       } else {
-        // Create bounds that include all points
         const bounds = L.latLngBounds(coordinates.map(coord => L.latLng(coord[0], coord[1])));
         map.fitBounds(bounds, { padding: [50, 50] });
       }
@@ -43,18 +41,16 @@ const MapController = ({ coordinates }: { coordinates: [number, number][] }) => 
 };
 
 const TripMap: React.FC<TripMapProps> = ({ destinations, countries }) => {
-  // Helper function to get coordinates for a country
+  // Hilfsfunktion zum Abrufen von Koordinaten für ein Land
   const getCountryCoordinates = (countryName: string): [number, number] => {
     const country = countries.find(c => c.name.common === countryName);
     return country?.latlng ? [country.latlng[0], country.latlng[1]] : [0, 0];
   };
   
-  // Create coordinates array for destinations
   const coordinates: [number, number][] = destinations
     .filter(d => d.countryName)
     .map(d => getCountryCoordinates(d.countryName));
   
-  // Default coordinates if none are available
   const defaultCoordinates: [number, number] = [20, 0];
   const hasCoordinates = coordinates.length > 0;
   
@@ -77,7 +73,6 @@ const TripMap: React.FC<TripMapProps> = ({ destinations, countries }) => {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
               
-              {/* Markers for each destination */}
               {destinations.filter(d => d.countryName).map((destination) => {
                 const coords = getCountryCoordinates(destination.countryName);
                 return (
@@ -97,7 +92,6 @@ const TripMap: React.FC<TripMapProps> = ({ destinations, countries }) => {
                 );
               })}
               
-              {/* Polyline connecting destinations in order */}
               {coordinates.length > 1 && (
                 <Polyline 
                   positions={coordinates}

@@ -10,7 +10,6 @@ interface TripItineraryProps {
 }
 
 const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
-  // If no trip is selected, show a placeholder
   if (!trip) {
     return (
       <Card>
@@ -29,12 +28,11 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
   }
 
   try {
-    // Validate trip dates
     if (!trip.startDate || !trip.endDate) {
       throw new Error("Trip dates are invalid");
     }
 
-    // Parse dates safely
+    // Datumsangaben sicher parsen
     const startDate = parseISO(trip.startDate);
     const endDate = parseISO(trip.endDate);
     
@@ -42,30 +40,29 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
       throw new Error("Invalid date format");
     }
     
-    // Calculate trip duration
+    // Reisedauer berechnen
     const tripDuration = differenceInDays(endDate, startDate) + 1;
     
-    // Create a day-by-day itinerary
+    // Tagesplan erstellen
     const days = Array.from({ length: tripDuration }).map((_, index) => {
       const date = addDays(startDate, index);
       return { date, dayNumber: index + 1 };
     });
 
-    // Ensure destinations is an array
+    // Sicherstellen, dass destinations ein Array ist
     const safeDestinations = Array.isArray(trip.destinations) ? trip.destinations : [];
     
-    // Distribute destinations across days (simple approach)
+    // Reiseziele auf Tage verteilen (einfacher Ansatz)
     const destinationsPerDay = safeDestinations.length > 0 
       ? Math.max(1, Math.ceil(safeDestinations.length / tripDuration))
       : 0;
     
-    // Generate day-by-day itinerary with destinations assigned to specific days
+    // Tägliche Reiseroute mit zugewiesenen Reisezielen erstellen
     const itinerary = days.map(day => {
       const dayIndex = day.dayNumber - 1;
       const startDestIndex = dayIndex * destinationsPerDay;
       const endDestIndex = Math.min(startDestIndex + destinationsPerDay, safeDestinations.length);
       
-      // Get destinations for this day
       const dayDestinations = destinationsPerDay > 0 
         ? safeDestinations.slice(startDestIndex, endDestIndex)
         : [];

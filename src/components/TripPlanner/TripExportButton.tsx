@@ -13,37 +13,29 @@ interface TripExportButtonProps {
 
 const TripExportButton: React.FC<TripExportButtonProps> = ({ trip }) => {
   const exportToPDF = () => {
-    // Create a new PDF document
     const doc = new jsPDF();
     
     try {
-      // Extract important data
       const startDate = new Date(trip.startDate);
       const endDate = new Date(trip.endDate);
       
-      // Add title
       doc.setFontSize(20);
       doc.setTextColor(0, 0, 0);
       doc.text(trip.name || trip.title, 20, 20);
       
-      // Add horizontal line
       doc.setDrawColor(220, 220, 220);
       doc.line(20, 25, 190, 25);
       
-      // Trip details
       doc.setFontSize(12);
       doc.text(`Travel Dates: ${format(startDate, "MMMM d, yyyy")} - ${format(endDate, "MMMM d, yyyy")}`, 20, 35);
       doc.text(`Starting Country: ${trip.startCountry || trip.homeCountry || "Not specified"}`, 20, 42);
       
-      // Add destinations section
       doc.setFontSize(14);
       doc.setTextColor(70, 70, 70);
       doc.text("Destinations", 20, 55);
       
-      // Loop through destinations
       let yPosition = 65;
       trip.destinations.forEach((destination, index) => {
-        // If we're about to go off the page, add a new page
         if (yPosition > 270) {
           doc.addPage();
           yPosition = 20;
@@ -65,7 +57,6 @@ const TripExportButton: React.FC<TripExportButtonProps> = ({ trip }) => {
           doc.setFontSize(10);
           doc.setTextColor(100, 100, 100);
           
-          // Split notes into lines that fit the PDF width
           const notesLines = doc.splitTextToSize(destination.notes, 150);
           doc.text(notesLines, 30, yPosition);
           yPosition += 7 * notesLines.length;
@@ -74,9 +65,7 @@ const TripExportButton: React.FC<TripExportButtonProps> = ({ trip }) => {
         yPosition += 3;
       });
       
-      // Add cost information
       if (trip.totalCost) {
-        // If we're about to go off the page, add a new page
         if (yPosition > 270) {
           doc.addPage();
           yPosition = 20;
@@ -93,11 +82,9 @@ const TripExportButton: React.FC<TripExportButtonProps> = ({ trip }) => {
         doc.text(`Total Estimated Cost: $${trip.totalCost.toLocaleString()}`, 25, yPosition);
       }
       
-      // Save PDF
       const fileName = `${(trip.name || trip.title).replace(/\s+/g, '_')}_travel_plan.pdf`;
       doc.save(fileName);
       
-      // Show success toast
       toast.success("Trip exported successfully", {
         description: `The PDF has been downloaded as "${fileName}".`,
       });

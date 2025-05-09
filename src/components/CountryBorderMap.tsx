@@ -14,45 +14,35 @@ const CountryBorderMap: React.FC<CountryBorderMapProps> = ({ countryName, countr
   const [mapLoaded, setMapLoaded] = useState(false);
   const [mapUrl, setMapUrl] = useState('');
   
-  // Create a clean version of the country name for the map
   const cleanCountryName = countryName.replace(/[^\w\s]/gi, '').trim();
   
-  // Initialize the map URL when the component mounts or country changes
   useEffect(() => {
-    // Using dedicated OpenStreetMap export service
     const baseUrl = 'https://www.openstreetmap.org/export/embed.html';
     
-    // Construct query parameters based on available data
     let queryParams;
     
     if (latlng && latlng.length === 2) {
-      // If we have coordinates, use them with appropriate zoom level
       const [lat, lng] = latlng;
       
-      // Use different buffer sizes based on country size (approximated by checking if it's a small island nation)
-      let zoomLevel = 5; // Default zoom level for most countries
+      let zoomLevel = 5;
       
-      // Adjust zoom level based on country name (just a rough estimation)
       if (['Vatican City', 'Monaco', 'Nauru', 'Tuvalu', 'San Marino', 'Liechtenstein', 'Malta', 'Maldives', 'Barbados', 'Bahrain', 'Singapore'].includes(countryName)) {
-        zoomLevel = 9; // Small countries need closer zoom
+        zoomLevel = 9;
       } else if (['Russia', 'Canada', 'United States', 'Brazil', 'Australia', 'China', 'India'].includes(countryName)) {
-        zoomLevel = 3; // Large countries need wider zoom
+        zoomLevel = 3;
       }
       
       queryParams = `?bbox=${lng-20},${lat-20},${lng+20},${lat+20}&layer=mapnik&marker=${lat},${lng}`;
       queryParams += `&zoom=${zoomLevel}`;
     } else if (countryCode && countryCode.match(/^[A-Z]{2,3}$/)) {
-      // If we have a valid country code, use it for better precision
       queryParams = `?bbox=-180,-85,180,85&layer=mapnik&relation=${countryCode}`;
     } else {
-      // Otherwise, use country name
       queryParams = `?query=${encodeURIComponent(cleanCountryName)}`;
     }
     
     setMapUrl(`${baseUrl}${queryParams}`);
   }, [countryName, countryCode, latlng, cleanCountryName]);
 
-  // Create a full view URL for the "View interactive map" link
   const viewMapUrl = countryCode ? 
     `https://www.openstreetmap.org/relation/${countryCode}` : 
     `https://www.openstreetmap.org/search?query=${encodeURIComponent(cleanCountryName)}`;

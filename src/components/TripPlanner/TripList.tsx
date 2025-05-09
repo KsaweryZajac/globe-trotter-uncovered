@@ -13,7 +13,7 @@ interface TripListProps {
 }
 
 const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }) => {
-  // Validate trips array
+  // Validiere das Trips-Array
   if (!trips || !Array.isArray(trips)) {
     console.error("Trips is not an array:", trips);
     return (
