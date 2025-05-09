@@ -3,7 +3,7 @@ import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { EditIcon, TrashIcon, CalendarIcon, MapPinIcon, EyeIcon } from 'lucide-react';
+import { EditIcon, TrashIcon, CalendarIcon, MapPinIcon } from 'lucide-react';
 import { Trip } from './TripForm';
 
 interface SavedTripsProps {
@@ -29,17 +29,7 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
     );
   }
   
-  // Handle viewing a trip
-  const handleViewTrip = (trip: Trip) => {
-    if (typeof onSelectTrip === 'function') {
-      onSelectTrip(trip);
-    } else {
-      console.error("onSelectTrip is not a function");
-    }
-  };
-
   const handleDeleteTrip = (event: React.MouseEvent, tripId: string) => {
-    // Prevent event bubbling to parent elements
     event.stopPropagation();
     
     if (typeof onDeleteTrip === 'function') {
@@ -99,8 +89,7 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
               return (
                 <div 
                   key={trip.id} 
-                  className="border rounded-md overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => handleViewTrip(trip)}
+                  className="border rounded-md overflow-hidden hover:shadow-md transition-shadow"
                 >
                   <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-4">
                     <h3 className="font-medium text-lg truncate">{trip.title || trip.name || 'Untitled Trip'}</h3>
@@ -136,19 +125,7 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                       }
                     </div>
                     
-                    <div className="flex justify-between items-center pt-2 border-t">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewTrip(trip);
-                        }}
-                      >
-                        <EyeIcon className="h-3.5 w-3.5 mr-1" />
-                        View
-                      </Button>
+                    <div className="flex justify-end items-center pt-2 border-t">
                       <div className="flex gap-1">
                         <Button 
                           variant="ghost" 
@@ -156,7 +133,7 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                           className="h-7 w-7 p-0"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleViewTrip(trip);
+                            onSelectTrip(trip);
                           }}
                         >
                           <EditIcon className="h-3.5 w-3.5" />

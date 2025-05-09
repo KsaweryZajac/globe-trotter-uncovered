@@ -13,7 +13,6 @@ interface TripListProps {
 }
 
 const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }) => {
-  // Validiere das Trips-Array
   if (!trips || !Array.isArray(trips)) {
     console.error("Trips is not an array:", trips);
     return (
@@ -33,14 +32,6 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
       </div>
     );
   }
-
-  const handleSelectTrip = (trip: Trip) => {
-    if (typeof onSelectTrip === 'function') {
-      onSelectTrip(trip);
-    } else {
-      console.error("onSelectTrip is not a function");
-    }
-  };
 
   const handleDeleteTrip = (e: React.MouseEvent, tripId: string) => {
     e.stopPropagation();
@@ -78,8 +69,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
         return (
           <Card 
             key={trip.id} 
-            className="hover:bg-accent/5 transition-colors cursor-pointer"
-            onClick={() => handleSelectTrip(trip)}
+            className="hover:bg-accent/5 transition-colors"
           >
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
@@ -91,7 +81,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
                     className="h-8 w-8 p-0"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSelectTrip(trip);
+                      onSelectTrip(trip);
                     }}
                   >
                     <Edit className="h-4 w-4" />
@@ -130,18 +120,6 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
                   </div>
                 )}
               </div>
-              
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full mt-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleSelectTrip(trip);
-                }}
-              >
-                View Details
-              </Button>
             </CardContent>
           </Card>
         );

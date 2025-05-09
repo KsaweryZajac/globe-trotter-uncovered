@@ -20,13 +20,11 @@ const TripPlanner = () => {
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [trips, setTrips] = useLocalStorage<Trip[]>('savedTrips', []);
 
-  // Länder mit React Query abrufen
   const { data: countries = [], isLoading: isLoadingCountries } = useQuery({
     queryKey: ['countries'],
     queryFn: () => api.getAllCountries()
   });
 
-  // Speichern einer Reise
   const handleSaveTrip = (tripData: Trip) => {
     try {
       console.log("Saving trip:", tripData);
@@ -54,13 +52,11 @@ const TripPlanner = () => {
     }
   };
 
-  // Auswahl einer Reise zum Bearbeiten
   const handleSelectTrip = (trip: Trip) => {
     setSelectedTrip(trip);
     setActiveTab("create");
   };
 
-  // Löschen einer Reise
   const handleDeleteTrip = (tripId: string) => {
     if (window.confirm("Are you sure you want to delete this trip?")) {
       try {
@@ -79,7 +75,6 @@ const TripPlanner = () => {
     }
   };
 
-  // Funktion zum Starten einer neuen Reise
   const startNewTrip = () => {
     setSelectedTrip(null);
     setActiveTab("create");
@@ -179,7 +174,7 @@ const TripPlanner = () => {
           
           <TabsContent value="list">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-3">
                 <Card>
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center">
@@ -195,7 +190,7 @@ const TripPlanner = () => {
                       <Button 
                         onClick={startNewTrip} 
                         variant="default" 
-                        className="w-full"
+                        className="w-full max-w-xs"
                       >
                         <PlusIcon className="h-4 w-4 mr-2" />
                         Create New Trip
@@ -211,78 +206,6 @@ const TripPlanner = () => {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
-              
-              <div className="lg:col-span-2">
-                {selectedTrip ? (
-                  <div className="space-y-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span>{selectedTrip.name || selectedTrip.title}</span>
-                          <div className="flex space-x-2">
-                            <TripExportButton trip={selectedTrip} />
-                            <Button
-                              onClick={() => handleSelectTrip(selectedTrip)}
-                              variant="outline"
-                            >
-                              Edit Trip
-                            </Button>
-                          </div>
-                        </CardTitle>
-                        <CardDescription>
-                          {selectedTrip.destinations.length} destinations · ${selectedTrip.totalCost?.toLocaleString() || 'Cost not calculated'}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                            <h3 className="text-sm font-medium text-muted-foreground">Start Date</h3>
-                            <p>{new Date(selectedTrip.startDate).toLocaleDateString()}</p>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-muted-foreground">End Date</h3>
-                            <p>{new Date(selectedTrip.endDate).toLocaleDateString()}</p>
-                          </div>
-                          <div>
-                            <h3 className="text-sm font-medium text-muted-foreground">Starting From</h3>
-                            <p>{selectedTrip.startCountry || selectedTrip.homeCountry || "Not specified"}</p>
-                          </div>
-                        </div>
-                        
-                        <h3 className="font-medium mt-6 mb-2">Destinations</h3>
-                        <ul className="space-y-2">
-                          {selectedTrip.destinations.map((destination) => (
-                            <li key={destination.id} className="p-3 border rounded-md bg-background/50">
-                              <div className="font-medium">{destination.countryName}{destination.cityName ? ` - ${destination.cityName}` : ''}</div>
-                              {destination.durationDays && <div className="text-sm text-muted-foreground">Duration: {destination.durationDays} days</div>}
-                              {destination.notes && <div className="text-sm mt-1">{destination.notes}</div>}
-                            </li>
-                          ))}
-                        </ul>
-                      </CardContent>
-                    </Card>
-                    
-                    <TripMap
-                      destinations={selectedTrip.destinations}
-                      countries={countries}
-                    />
-                  </div>
-                ) : (
-                  <Card className="h-full flex items-center justify-center p-10 text-center">
-                    <div>
-                      <Map className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-medium mb-2">No Trip Selected</h3>
-                      <p className="text-muted-foreground mb-4">
-                        Select a trip from the list to view its details, or create a new trip.
-                      </p>
-                      <Button onClick={startNewTrip}>
-                        <PlusIcon className="h-4 w-4 mr-2" />
-                        Create New Trip
-                      </Button>
-                    </div>
-                  </Card>
-                )}
               </div>
             </div>
           </TabsContent>
