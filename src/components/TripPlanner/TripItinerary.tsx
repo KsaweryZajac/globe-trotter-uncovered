@@ -29,9 +29,20 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
   }
 
   try {
-    // Calculate trip duration
+    // Validate trip dates
+    if (!trip.startDate || !trip.endDate) {
+      throw new Error("Trip dates are invalid");
+    }
+
+    // Parse dates safely
     const startDate = parseISO(trip.startDate);
     const endDate = parseISO(trip.endDate);
+    
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error("Invalid date format");
+    }
+    
+    // Calculate trip duration
     const tripDuration = differenceInDays(endDate, startDate) + 1;
     
     // Create a day-by-day itinerary
@@ -40,7 +51,7 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
       return { date, dayNumber: index + 1 };
     });
 
-    // Make sure destinations is an array
+    // Ensure destinations is an array
     const safeDestinations = Array.isArray(trip.destinations) ? trip.destinations : [];
     
     // Distribute destinations across days (simple approach)
@@ -83,38 +94,49 @@ const TripItinerary: React.FC<TripItineraryProps> = ({ trip }) => {
                 
                 {day.destinations.length > 0 ? (
                   <div className="space-y-4 pl-7">
-                    {day.destinations.map((dest, index) => (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center">
-                          <MapPinIcon className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
-                          <h4 className="font-medium">
-                            {dest.city || dest.cityName}, 
-                            {dest.country?.name?.common || dest.countryName}
-                          </h4>
-                        </div>
-                        
-                        {Array.isArray(dest.selectedPOIs) && dest.selectedPOIs.length > 0 ? (
-                          <div className="ml-6 space-y-2">
-                            {dest.selectedPOIs.map((poi) => (
-                              <div key={poi.id} className="flex">
-                                <ClockIcon className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
-                                <div className="flex-1">
-                                  <p className="text-sm">{poi.name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {poi.description?.substring(0, 60)}
-                                    {poi.description && poi.description.length > 60 ? '...' : ''}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
+                    {day.destinations.map((dest, index) => {
+                      if (!dest) return null;
+                      
+                      const cityName = dest.city || dest.cityName || 'Unknown city';
+                      const countryName = dest.country?.name?.common || 
+                                         dest.countryName || 'Unknown country';
+                      
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center">
+                            <MapPinIcon className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
+                            <h4 className="font-medium">
+                              {cityName}, {countryName}
+                            </h4>
                           </div>
-                        ) : (
-                          <p className="ml-6 text-sm text-muted-foreground">
-                            Free time to explore {dest.city || dest.cityName}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                          
+                          {Array.isArray(dest.selectedPOIs) && dest.selectedPOIs.length > 0 ? (
+                            <div className="ml-6 space-y-2">
+                              {dest.selectedPOIs.map((poi) => {
+                                if (!poi || !poi.id) return null;
+                                
+                                return (
+                                  <div key={poi.id} className="flex">
+                                    <ClockIcon className="h-4 w-4 mr-2 text-muted-foreground flex-shrink-0" />
+                                    <div className="flex-1">
+                                      <p className="text-sm">{poi.name}</p>
+                                      <p className="text-xs text-muted-foreground">
+                                        {poi.description?.substring(0, 60)}
+                                        {poi.description && poi.description.length > 60 ? '...' : ''}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <p className="ml-6 text-sm text-muted-foreground">
+                              Free time to explore {cityName}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-sm text-muted-foreground ml-7">

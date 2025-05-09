@@ -26,35 +26,50 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
     }));
   };
 
-  // Generate gallery items from destinations
+  // Generate gallery items from destinations - making sure our data is valid
   const galleryItems: GalleryItem[] = React.useMemo(() => {
-    if (!Array.isArray(destinations)) return [];
+    // Verify destinations is an array and not empty
+    if (!destinations || !Array.isArray(destinations) || destinations.length === 0) {
+      return [];
+    }
     
+    // Safely map destinations to gallery items
     return destinations.flatMap(dest => {
-      if (!dest || !dest.city || !dest.country || !dest.country.name) {
+      if (!dest || typeof dest !== 'object') {
+        console.warn('Invalid destination object in TripGallery', dest);
         return [];
       }
       
       // Create gallery item for each city
-      const cityItem: GalleryItem = {
-        id: `city-${dest.city}`,
-        title: dest.city,
-        subtitle: dest.country.name.common,
-        searchTerm: `${dest.city} ${dest.country.name.common} skyline`
-      };
+      const cityItems: GalleryItem[] = [];
       
-      // Create gallery items for selected POIs
-      const poiItems: GalleryItem[] = Array.isArray(dest.selectedPOIs) 
-        ? dest.selectedPOIs.map(poi => ({
-            id: poi.id,
-            title: poi.name,
-            subtitle: `${dest.city}, ${dest.country.name.common}`,
-            searchTerm: poi.name,
-            image: poi.image
-          }))
-        : [];
+      if (dest.city && dest.country && dest.country.name) {
+        cityItems.push({
+          id: `city-${dest.city}`,
+          title: dest.city,
+          subtitle: dest.country.name.common || '',
+          searchTerm: `${dest.city} ${dest.country.name.common || ''} skyline`
+        });
+      }
       
-      return [cityItem, ...poiItems];
+      // Create gallery items for selected POIs if they exist
+      const poiItems: GalleryItem[] = [];
+      
+      if (Array.isArray(dest.selectedPOIs)) {
+        dest.selectedPOIs.forEach(poi => {
+          if (poi && poi.id && poi.name) {
+            poiItems.push({
+              id: poi.id,
+              title: poi.name,
+              subtitle: `${dest.city || ''}, ${dest.country?.name?.common || ''}`,
+              searchTerm: poi.name,
+              image: poi.image
+            });
+          }
+        });
+      }
+      
+      return [...cityItems, ...poiItems];
     });
   }, [destinations]);
 
@@ -64,39 +79,40 @@ const TripGallery: React.FC<TripGalleryProps> = ({ destinations }) => {
         <CardTitle className="text-lg">Trip Gallery</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {galleryItems.map((item) => (
-            <div key={item.id} className="relative rounded-md overflow-hidden aspect-[4/3]">
-              {!loadedImages[item.id] && (
-                <Skeleton className="absolute inset-0 w-full h-full" />
-              )}
-              <img
-                src={item.image || `https://source.unsplash.com/400x300/?${encodeURIComponent(item.searchTerm)}`}
-                alt={item.title}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${loadedImages[item.id] ? 'opacity-100' : 'opacity-0'}`}
-                onLoad={() => handleImageLoaded(item.id)}
-                loading="lazy"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement;
-                  target.src = `https://via.placeholder.com/400x300?text=${encodeURIComponent(item.title)}`;
-                  handleImageLoaded(item.id);
-                }}
-              />
-              <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2">
-                <h4 className="text-sm font-medium">{item.title}</h4>
-                <p className="text-xs text-gray-200">{item.subtitle}</p>
-              </div>
+        {galleryItems.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {galleryItems.map((item) => (
+                <div key={item.id} className="relative rounded-md overflow-hidden aspect-[4/3]">
+                  {!loadedImages[item.id] && (
+                    <Skeleton className="absolute inset-0 w-full h-full" />
+                  )}
+                  <img
+                    src={item.image || `https://source.unsplash.com/400x300/?${encodeURIComponent(item.searchTerm)}`}
+                    alt={item.title}
+                    className={`w-full h-full object-cover transition-opacity duration-300 ${loadedImages[item.id] ? 'opacity-100' : 'opacity-0'}`}
+                    onLoad={() => handleImageLoaded(item.id)}
+                    loading="lazy"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.src = `https://via.placeholder.com/400x300?text=${encodeURIComponent(item.title)}`;
+                      handleImageLoaded(item.id);
+                    }}
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white p-2">
+                    <h4 className="text-sm font-medium">{item.title}</h4>
+                    <p className="text-xs text-gray-200">{item.subtitle}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        
-        {galleryItems.length === 0 && (
+            <p className="text-xs text-muted-foreground mt-2">Images from Unsplash</p>
+          </>
+        ) : (
           <div className="text-center p-4">
             <p className="text-muted-foreground">Add destinations to see images</p>
           </div>
         )}
-        
-        <p className="text-xs text-muted-foreground mt-2">Images from Unsplash</p>
       </CardContent>
     </Card>
   );

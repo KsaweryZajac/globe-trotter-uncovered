@@ -13,9 +13,14 @@ interface TripListProps {
 }
 
 const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }) => {
-  if (!Array.isArray(trips)) {
+  // Validate trips array
+  if (!trips || !Array.isArray(trips)) {
     console.error("Trips is not an array:", trips);
-    return null;
+    return (
+      <div className="text-center p-4">
+        <p className="text-muted-foreground">Unable to load trips</p>
+      </div>
+    );
   }
   
   if (trips.length === 0) {
@@ -61,6 +66,10 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
         try {
           startDate = new Date(trip.startDate);
           endDate = new Date(trip.endDate);
+          
+          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            throw new Error("Invalid date format");
+          }
         } catch (error) {
           console.error("Error parsing dates for trip", trip.id, error);
           return null;
@@ -74,7 +83,7 @@ const TripList: React.FC<TripListProps> = ({ trips, onSelectTrip, onDeleteTrip }
           >
             <CardHeader className="pb-2">
               <div className="flex justify-between items-start">
-                <CardTitle className="text-lg font-medium">{trip.name || trip.title}</CardTitle>
+                <CardTitle className="text-lg font-medium">{trip.name || trip.title || 'Untitled Trip'}</CardTitle>
                 <div className="flex space-x-1">
                   <Button 
                     variant="ghost" 

@@ -13,9 +13,20 @@ interface SavedTripsProps {
 }
 
 const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTrip }) => {
-  if (!Array.isArray(trips)) {
+  if (!trips || !Array.isArray(trips)) {
     console.error("Trips is not an array:", trips);
-    return null;
+    return (
+      <Card className="shadow-md">
+        <CardHeader className="pb-2 bg-muted/30">
+          <CardTitle className="text-lg">Your Saved Trips</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <div className="text-center p-4">
+            <p className="text-muted-foreground">No trips available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
   
   // Handle viewing a trip
@@ -74,10 +85,16 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
               try {
                 startDate = parseISO(trip.startDate);
                 endDate = parseISO(trip.endDate);
+                
+                if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                  throw new Error("Invalid date format");
+                }
               } catch (error) {
                 console.error("Error parsing dates:", error);
                 return null;
               }
+              
+              const safeDestinations = Array.isArray(trip.destinations) ? trip.destinations : [];
               
               return (
                 <div 
@@ -86,7 +103,7 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                   onClick={() => handleViewTrip(trip)}
                 >
                   <div className="bg-gradient-to-r from-primary/10 to-accent/10 p-4">
-                    <h3 className="font-medium text-lg truncate">{trip.title}</h3>
+                    <h3 className="font-medium text-lg truncate">{trip.title || trip.name || 'Untitled Trip'}</h3>
                     <div className="flex items-center text-xs text-muted-foreground mt-1">
                       <CalendarIcon className="h-3 w-3 mr-1" />
                       {format(startDate, 'MMM d, yyyy')} - {format(endDate, 'MMM d, yyyy')}
@@ -95,15 +112,24 @@ const SavedTrips: React.FC<SavedTripsProps> = ({ trips, onSelectTrip, onDeleteTr
                   
                   <div className="p-4">
                     <div className="space-y-1 mb-4">
-                      {Array.isArray(trip.destinations) && trip.destinations.length > 0 
-                        ? trip.destinations.map((dest, index) => (
-                            <div key={index} className="flex items-center text-sm">
-                              <MapPinIcon className="h-3 w-3 mr-1 text-muted-foreground flex-shrink-0" />
-                              <span className="truncate">
-                                {dest.city || dest.cityName}, {dest.country?.name?.common || dest.countryName}
-                              </span>
-                            </div>
-                          ))
+                      {safeDestinations.length > 0 
+                        ? safeDestinations.map((dest, index) => {
+                            if (!dest) return null;
+                            
+                            const cityName = dest.city || dest.cityName || '';
+                            const countryName = dest.country?.name?.common || dest.countryName || '';
+                            
+                            if (!cityName && !countryName) return null;
+                            
+                            return (
+                              <div key={index} className="flex items-center text-sm">
+                                <MapPinIcon className="h-3 w-3 mr-1 text-muted-foreground flex-shrink-0" />
+                                <span className="truncate">
+                                  {cityName}{countryName ? (cityName ? `, ${countryName}` : countryName) : ''}
+                                </span>
+                              </div>
+                            );
+                          })
                         : (
                           <div className="text-sm text-muted-foreground">No destinations added</div>
                         )
